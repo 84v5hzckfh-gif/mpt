@@ -93,6 +93,20 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 .empty{color:var(--muted);font-style:italic;padding:6px 0}
 .step{display:flex;gap:10px;align-items:flex-start;margin:6px 0}
 .step i{font-style:normal;flex:0 0 24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;display:grid;place-items:center;font-weight:700}
+.tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin:0 0 14px}
+.tabs[hidden]{display:none}
+.tabs button{flex:1;border:0;background:none;color:var(--muted);font-size:15px;font-weight:600;padding:10px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--brand);color:#fff}
+.chips{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0 4px;margin-top:10px}
+.chips button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:15px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.day{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.day:first-of-type{border-top:0}
+.day .dn{flex:0 0 74px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+.les{flex:1;min-width:0;border-left:5px solid var(--line);padding:2px 0 2px 10px}
+.les .nr{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.02em}
+.les b{display:block;font-weight:600;margin:1px 0 3px}
+.les .meta{font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -106,7 +120,7 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 <section id="scrStart" class="screen" hidden>
   <div class="card">
     <p class="lead">Nog geen gegevens op dit toestel.</p>
-    <p class="muted">Importeer het versleutelde databestand (<b>MPT_data_….mpt</b>) dat je van je beheerder hebt gekregen.</p>
+    <p class="muted">Importeer het versleutelde databestand (<b>MPT_data_….mpt</b> of <b>FTS_rooster_….mpt</b>) dat je van je beheerder hebt gekregen.</p>
     <button class="btn" data-import>Databestand importeren</button>
     <div class="msg" id="msgStart"></div>
   </div>
@@ -136,13 +150,20 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 
 <!-- MAIN -->
 <section id="scrMain" class="screen" hidden>
-  <div class="card search">
-    <label class="f" for="q" style="margin-top:0">V-nummer</label>
-    <input id="q" type="search" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="bijv. 452949" class="fill">
-    <ul class="sugg" id="sugg"></ul>
-    <div class="msg" id="msgSearch"></div>
+  <nav class="tabs" id="tabs" hidden>
+    <button type="button" data-tab="persoon" aria-selected="true">Persoon</button>
+    <button type="button" data-tab="rooster" aria-selected="false">Rooster</button>
+  </nav>
+  <div id="viewPersoon">
+    <div class="card search">
+      <label class="f" for="q" style="margin-top:0">V-nummer</label>
+      <input id="q" type="search" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="bijv. 452949" class="fill">
+      <ul class="sugg" id="sugg"></ul>
+      <div class="msg" id="msgSearch"></div>
+    </div>
+    <div id="person"></div>
   </div>
-  <div id="person"></div>
+  <div id="viewRooster" hidden></div>
   <p class="foot" id="dataInfo"></p>
 </section>
 
@@ -150,7 +171,7 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 <section id="scrAdmin" class="screen" hidden>
   <div class="card">
     <h2>Beheer · versleutelen</h2>
-    <p class="muted small">Doe dit op de PC. Kies het bestand dat de Excel-knop heeft gemaakt (<b>MPT_export_ONVERSLEUTELD_….json</b>). De app versleutelt het in je browser; er wordt niets verstuurd.</p>
+    <p class="muted small">Doe dit op de PC. Kies het bestand dat de Excel-knop heeft gemaakt (<b>MPT_export_ONVERSLEUTELD_….json</b>) of je rooster (<b>MTC_FTS_overzicht.xlsx</b>). De app versleutelt het in je browser; er wordt niets verstuurd.</p>
     <button class="btn sec" id="btnPickExport">1. Exportbestand kiezen</button>
     <div class="msg" id="msgExport"></div>
     <label class="f" for="pwNew1">2. Wachtwoord (minimaal 10 tekens)</label>
@@ -178,10 +199,13 @@ const HIDDEN_MS = 2 * 60 * 1000;     // app 2 min op achtergrond: slot
 const $ = s => document.querySelector(s);
 const enc = new TextEncoder(), dec = new TextDecoder();
 
-let encBlob = null;   // versleuteld (mag bewaard worden)
-let data = null;      // ontsleuteld (alleen in geheugen)
+const KEYS = { mpt: "blob", rooster: "blob_rooster" };
+let blobs = { mpt: null, rooster: null };   // versleuteld (mag bewaard worden)
+let data = null;      // MPT ontsleuteld (alleen in geheugen)
+let rooster = null;   // rooster ontsleuteld (alleen in geheugen)
 let index = null;     // Map V-nummer -> persoon
-let exportPlain = null;
+let exportPlain = null, exportKind = null;
+let rState = { meso: 0, wk: 0 };
 let fileMode = "import";
 let idleTimer = null, hiddenAt = 0;
 
@@ -217,11 +241,12 @@ async function deriveKey(pw, salt, iter) {
   const base = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
 }
-const aadOf = w => enc.encode([w.formaat, w.versie, w.iter, w.gemaakt].join("|"));
-async function encryptData(obj, pw) {
+const aadOf = w => enc.encode([w.formaat, w.versie, w.iter, w.gemaakt].concat(w.inhoud ? [w.inhoud] : []).join("|"));
+async function encryptData(obj, pw, inhoud) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const w = { formaat: FORMAT_ENC, versie: 1, iter: ITER, gemaakt: obj.gemaakt || "" };
+  if (inhoud && inhoud !== "mpt") w.inhoud = inhoud;
   const key = await deriveKey(pw, salt, ITER);
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadOf(w) }, key, enc.encode(JSON.stringify(obj))));
   return Object.assign(w, { salt: b64(salt), iv: b64(iv), data: b64(ct) });
@@ -248,10 +273,15 @@ function busy(btn, on, label) {
   else { btn.disabled = false; btn.textContent = btn.dataset.l || btn.textContent; }
 }
 function lockScreen() {
-  data = null; index = null;
+  data = null; rooster = null; index = null;
   $("#person").textContent = ""; $("#q").value = ""; $("#sugg").textContent = "";
+  $("#viewRooster").textContent = "";
   $("#pwUnlock").value = ""; msg($("#msgLock"), "");
-  $("#lockInfo").textContent = encBlob && encBlob.gemaakt ? "Gegevens van " + encBlob.gemaakt : "";
+  $("#title").textContent = "MPT Persoon";
+  const info = [];
+  if (blobs.mpt) info.push("MPT-gegevens van " + (blobs.mpt.gemaakt || "?"));
+  if (blobs.rooster) info.push("Rooster van " + (blobs.rooster.gemaakt || "?"));
+  $("#lockInfo").textContent = info.join(" · ");
   show("scrLock");
 }
 
@@ -272,20 +302,32 @@ $("#fileIn").addEventListener("change", async e => {
   if (!f) return;
   const target = fileMode === "export" ? $("#msgExport") : ($("#scrLock").hidden ? $("#msgStart") : $("#msgLock"));
   try {
+    if (fileMode === "export" && /\.xlsx$/i.test(f.name)) {
+      exportPlain = null; exportKind = null; checkEncryptReady();
+      msg($("#msgExport"), "Rooster inlezen…", "ok");
+      const r = await parseRooster(f);
+      exportPlain = r; exportKind = "rooster";
+      const gepland = r.mesos.filter(m => m.weken.some(w => w.dagen.some(Boolean))).length;
+      msg($("#msgExport"), "✓ Rooster: " + r.mesos.length + " meso's (" + gepland + " ingepland), " + Object.keys(r.lessen).length + " lessen.", "ok");
+      checkEncryptReady();
+      return;
+    }
+    if (fileMode === "import" && /\.xlsx$/i.test(f.name)) throw new Error("Dit is het Excel-rooster zelf. Versleutel het eerst via Beheer op de PC en importeer dan het .mpt-bestand.");
     const obj = await readFile(f);
     if (fileMode === "export") {
-      if (obj.formaat !== FORMAT_EXP || !Array.isArray(obj.personen)) throw new Error(obj.formaat === FORMAT_ENC ? "Dit bestand is al versleuteld." : "Dit is geen exportbestand van de Excel-knop.");
-      exportPlain = obj;
+      if (obj.formaat !== FORMAT_EXP || !Array.isArray(obj.personen)) throw new Error(obj.formaat === FORMAT_ENC ? "Dit bestand is al versleuteld." : "Dit is geen exportbestand van de Excel-knop of rooster (.xlsx).");
+      exportPlain = obj; exportKind = "mpt";
       msg($("#msgExport"), "✓ " + obj.personen.length + " personen gevonden (export van " + (obj.gemaakt || "?") + ").", "ok");
       checkEncryptReady();
     } else {
       if (obj.formaat === FORMAT_EXP) throw new Error("Dit is het ONVERSLEUTELDE exportbestand. Versleutel het eerst via Beheer op de PC en importeer dan het .mpt-bestand.");
       if (obj.formaat !== FORMAT_ENC || !obj.data || !obj.salt || !obj.iv) throw new Error("Dit is geen MPT-databestand.");
-      encBlob = obj;
-      await kvSet("blob", obj);
+      const soort = obj.inhoud === "rooster" ? "rooster" : "mpt";
+      blobs[soort] = obj;
+      await kvSet(KEYS[soort], obj);
       try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
       lockScreen();
-      msg($("#msgLock"), "Bestand geïmporteerd. Voer het wachtwoord in.", "ok");
+      msg($("#msgLock"), (soort === "rooster" ? "Rooster" : "MPT-gegevens") + " geïmporteerd. Voer het wachtwoord in.", "ok");
     }
   } catch (err) { msg(target, err.message); }
 });
@@ -298,29 +340,37 @@ $("#formUnlock").addEventListener("submit", async e => {
   const btn = $("#btnUnlock");
   busy(btn, true, "Bezig…"); msg($("#msgLock"), "");
   try {
-    data = await decryptData(encBlob, pw);
-    index = new Map(data.personen.map(p => [String(p.v).trim(), p]));
+    const mislukt = [];
+    for (const soort of ["mpt", "rooster"]) {
+      if (!blobs[soort]) continue;
+      try {
+        const obj = await decryptData(blobs[soort], pw);
+        if (soort === "mpt") { data = obj; index = new Map(data.personen.map(p => [String(p.v).trim(), p])); }
+        else rooster = obj;
+      } catch (_) { mislukt.push(soort); }
+    }
+    if (!data && !rooster) throw new Error("fout");
     $("#pwUnlock").value = "";
-    $("#dataInfo").textContent = "Gegevens van " + (data.gemaakt || "?") + " · " + data.personen.length + " personen";
-    show("scrMain"); armIdle();
-    setTimeout(() => $("#q").focus(), 50);
+    openMain(mislukt);
+    armIdle();
   } catch (err) {
-    data = null;
+    data = null; rooster = null;
     msg($("#msgLock"), "Wachtwoord onjuist (of het bestand is beschadigd).");
   } finally { busy(btn, false); }
 });
 $("#btnLock").addEventListener("click", lockScreen);
 $("#btnWipe").addEventListener("click", async () => {
-  if (!confirm("Alle MPT-gegevens van dit toestel wissen?")) return;
-  await kvDel("blob"); encBlob = null; data = null; show("scrStart");
+  if (!confirm("Alle MPT-gegevens en roosters van dit toestel wissen?")) return;
+  await kvDel(KEYS.mpt); await kvDel(KEYS.rooster);
+  blobs = { mpt: null, rooster: null }; data = null; rooster = null; show("scrStart");
 });
 
 /* ---------- automatisch op slot ---------- */
-function armIdle() { clearTimeout(idleTimer); if (data) idleTimer = setTimeout(lockScreen, IDLE_MS); }
+function armIdle() { clearTimeout(idleTimer); if (data || rooster) idleTimer = setTimeout(lockScreen, IDLE_MS); }
 ["pointerdown", "keydown", "scroll"].forEach(ev => addEventListener(ev, armIdle, { passive: true }));
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) hiddenAt = Date.now();
-  else if (data && hiddenAt && Date.now() - hiddenAt > HIDDEN_MS) lockScreen();
+  else if ((data || rooster) && hiddenAt && Date.now() - hiddenAt > HIDDEN_MS) lockScreen();
 });
 
 /* ---------- beheer ---------- */
@@ -334,17 +384,18 @@ $("#btnEncrypt").addEventListener("click", async () => {
   const btn = $("#btnEncrypt");
   busy(btn, true, "Versleutelen…"); msg($("#msgEncrypt"), "");
   try {
-    const w = await encryptData(exportPlain, $("#pwNew1").value);
+    const w = await encryptData(exportPlain, $("#pwNew1").value, exportKind);
     const blob = new Blob([JSON.stringify(w)], { type: "application/octet-stream" });
     const a = document.createElement("a");
     const d = new Date(), pad = n => String(n).padStart(2, "0");
-    a.download = "MPT_data_" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".mpt";
+    a.download = (exportKind === "rooster" ? "FTS_rooster_" : "MPT_data_") + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".mpt";
     a.href = URL.createObjectURL(blob);
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    $("#pwNew1").value = ""; $("#pwNew2").value = ""; exportPlain = null;
+    const wasRooster = exportKind === "rooster";
+    $("#pwNew1").value = ""; $("#pwNew2").value = ""; exportPlain = null; exportKind = null;
     msg($("#msgExport"), "");
-    msg($("#msgEncrypt"), "✓ Klaar: " + a.download + " staat in je Downloads. Verwijder nu het onversleutelde .json-bestand.", "ok");
+    msg($("#msgEncrypt"), "✓ Klaar: " + a.download + " staat in je Downloads." + (wasRooster ? "" : " Verwijder nu het onversleutelde .json-bestand."), "ok");
   } catch (err) { msg($("#msgEncrypt"), "Versleutelen mislukt: " + err.message); }
   finally { busy(btn, false); checkEncryptReady(); }
 });
@@ -538,12 +589,175 @@ function doSearch(v) {
 $("#q").addEventListener("input", e => doSearch(e.target.value));
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
 
+/* ---------- hoofdscherm + tabs ---------- */
+let tab = "persoon";
+function openMain(mislukt) {
+  const both = !!(data && rooster);
+  $("#tabs").hidden = !both;
+  if (!data) tab = "rooster";
+  if (!rooster) tab = "persoon";
+  const info = [];
+  if (data) info.push("MPT van " + (data.gemaakt || "?") + " · " + data.personen.length + " personen");
+  if (rooster) info.push("Rooster van " + (rooster.gemaakt || "?"));
+  if (mislukt && mislukt.length) info.push((mislukt.includes("rooster") ? "Rooster" : "MPT") + " niet ontgrendeld: ander wachtwoord");
+  $("#dataInfo").textContent = info.join(" · ");
+  $("#title").textContent = tab === "rooster" ? "FTS Rooster" : "MPT Persoon";
+  setTab(tab);
+  show("scrMain");
+  if (tab === "persoon") setTimeout(() => $("#q").focus(), 50);
+}
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  $("#viewPersoon").hidden = t !== "persoon";
+  $("#viewRooster").hidden = t !== "rooster";
+  $("#title").textContent = t === "rooster" ? "FTS Rooster" : "MPT Persoon";
+  if (t === "rooster") renderRooster();
+}
+document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+/* ---------- rooster: xlsx inlezen (zonder bibliotheek) ---------- */
+async function readZip(file) {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  let e = buf.length - 22;
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error("Dit is geen geldig .xlsx-bestand.");
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  const files = {};
+  for (let i = 0; i < n; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    files[dec.decode(buf.subarray(p + 46, p + 46 + nl))] = { method, csize, lho };
+    p += 46 + nl + xl + cl;
+  }
+  return async name => {
+    const f = files[name]; if (!f) return null;
+    const start = f.lho + 30 + dv.getUint16(f.lho + 26, true) + dv.getUint16(f.lho + 28, true);
+    const raw = buf.subarray(start, start + f.csize);
+    if (f.method === 0) return dec.decode(raw);
+    if (typeof DecompressionStream === "undefined") throw new Error("Deze browser kan .xlsx niet lezen. Gebruik een recente Chrome, Edge of Safari.");
+    const out = await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer();
+    return dec.decode(out);
+  };
+}
+async function readXlsx(file) {
+  const get = await readZip(file);
+  const X = t => new DOMParser().parseFromString(t, "application/xml");
+  const wb = X(await get("xl/workbook.xml"));
+  const rels = X(await get("xl/_rels/workbook.xml.rels"));
+  const target = {};
+  for (const r of rels.getElementsByTagName("Relationship")) target[r.getAttribute("Id")] = r.getAttribute("Target");
+  const ssTxt = await get("xl/sharedStrings.xml");
+  const ss = ssTxt ? [...X(ssTxt).getElementsByTagName("si")].map(si => [...si.getElementsByTagName("t")].filter(t => !t.closest || !t.closest("rPh")).map(t => t.textContent).join("")) : [];
+  const sheets = [];
+  for (const sh of wb.getElementsByTagName("sheet")) {
+    let t = target[sh.getAttribute("r:id")] || "";
+    t = t.startsWith("/") ? t.slice(1) : "xl/" + t.replace(/^\.\//, "");
+    const x = await get(t); if (!x) continue;
+    const cells = {};
+    for (const c of X(x).getElementsByTagName("c")) {
+      const ty = c.getAttribute("t"), v = c.getElementsByTagName("v")[0];
+      let val = null;
+      if (ty === "s" && v) val = ss[Number(v.textContent)];
+      else if (ty === "inlineStr") val = [...c.getElementsByTagName("t")].map(t => t.textContent).join("");
+      else if ((ty === "str" || ty === "e") && v) val = v.textContent;
+      else if (v) val = Number(v.textContent);
+      if (val !== null && val !== "") cells[c.getAttribute("r")] = val;
+    }
+    sheets.push({ naam: sh.getAttribute("name"), cells });
+  }
+  return sheets;
+}
+const colL = i => String.fromCharCode(64 + i);
+const lesNr = v => v === undefined || v === null || v === "" ? "" : (typeof v === "number" ? v.toFixed(2) : String(v).trim());
+async function parseRooster(file) {
+  const sheets = await readXlsx(file);
+  const les = sheets.find(s => s.naam === "Lessen");
+  if (!les) throw new Error("Tabblad 'Lessen' niet gevonden. Is dit het FTS-overzicht?");
+  const lessen = {};
+  for (let r = 2; r < 2000; r++) {
+    const nr = lesNr(les.cells["A" + r]); if (!nr) { if (r > 5 && !les.cells["A" + (r + 1)]) break; continue; }
+    const g = k => { const v = les.cells[k + r]; return v === undefined ? "" : String(v); };
+    lessen[nr] = { d: g("B"), les: g("C"), zone: g("D"), km: g("E"), opdr: g("F") };
+  }
+  const mesos = [];
+  for (const s of sheets) {
+    if (s.naam === "Lessen" || s.naam === "Instellingen") continue;
+    let pr = 0;
+    for (let r = 1; r < 400; r++) { const v = s.cells["A" + r]; if (typeof v === "string" && /^planning/i.test(v.trim())) { pr = r; break; } }
+    if (!pr) continue;
+    const dagen = [];
+    for (let c = 2; c <= 8; c++) { const v = s.cells[colL(c) + (pr + 1)]; if (v === undefined) break; dagen.push(String(v)); }
+    const weken = [];
+    for (let r = pr + 2; r < pr + 80; r++) {
+      const wk = s.cells["A" + r]; if (wk === undefined || wk === "") break;
+      weken.push({ wk: String(wk), dagen: dagen.map((_, i) => lesNr(s.cells[colL(i + 2) + r])) });
+    }
+    mesos.push({ naam: s.naam, titel: String(s.cells.A1 || s.naam), sub: String(s.cells.A2 || ""), dagen, weken });
+  }
+  if (!mesos.length) throw new Error("Geen meso-roosters met een blok 'Planning' gevonden.");
+  const d = new Date(), pad = n => String(n).padStart(2, "0");
+  return { formaat: "mpt-rooster", versie: 1, gemaakt: pad(d.getDate()) + "-" + pad(d.getMonth() + 1) + "-" + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()), bron: file.name, lessen, mesos };
+}
+
+/* ---------- rooster: weergave ---------- */
+const DISC = [["hardlopen", "#7FA7D0"], ["speedmars", "#9C8BC4"], ["marsen", "#8FB07A"], ["kracht", "#E0A07A"], ["mma", "#D98A94"],
+  ["zwemmen", "#6FB3BA"], ["oriëntatie", "#C9A96A"], ["orientatie", "#C9A96A"], ["combi", "#A99A80"], ["hiba", "#A99A80"],
+  ["klito", "#7EA6B3"], ["toba", "#7EA6B3"], ["touwbaan", "#7EA6B3"], ["ski", "#8E9BA8"]];
+const discKleur = d => { const l = String(d || "").toLowerCase(); for (const [k, c] of DISC) if (l.includes(k)) return c; return "var(--line)"; };
+function renderRooster() {
+  const host = $("#viewRooster"); host.textContent = "";
+  if (!rooster) return;
+  const ms = rooster.mesos;
+  if (rState.meso >= ms.length) rState.meso = 0;
+  const m = ms[rState.meso];
+  if (rState.wk >= m.weken.length) rState.wk = 0;
+
+  const sel = el("select", { class: "fill", "aria-label": "Meso" });
+  ms.forEach((x, i) => sel.append(el("option", { value: String(i), text: x.naam })));
+  sel.value = String(rState.meso);
+  sel.addEventListener("change", () => { rState.meso = Number(sel.value); rState.wk = 0; renderRooster(); });
+  const chips = el("div", { class: "chips", role: "group", "aria-label": "Week" });
+  m.weken.forEach((w, i) => {
+    const b = el("button", { type: "button", text: "Wk " + w.wk, "aria-pressed": String(i === rState.wk) });
+    b.addEventListener("click", () => { rState.wk = i; renderRooster(); });
+    chips.append(b);
+  });
+  host.append(el("div", { class: "card" }, el("label", { class: "f", text: "Meso", style: "margin-top:0" }), sel,
+    m.sub ? el("p", { class: "note", text: m.sub }) : null, chips));
+
+  const w = m.weken[rState.wk];
+  const list = el("div");
+  if (!w || !w.dagen.some(Boolean)) {
+    list.append(el("p", { class: "empty", text: "Voor deze week zijn nog geen lessen ingepland." }));
+  } else {
+    m.dagen.forEach((dn, i) => {
+      const nr = w.dagen[i], L = nr ? rooster.lessen[nr] : null;
+      const blok = el("div", { class: "les" });
+      if (!nr) blok.append(el("span", { class: "meta", text: "—" }));
+      else if (!L) blok.append(el("div", { class: "nr", text: nr }), el("b", { text: "Les " + nr + " (niet in Lessen)" }));
+      else {
+        blok.style.borderLeftColor = discKleur(L.d);
+        const meta = [L.zone, [L.km, L.opdr].filter(Boolean).join(" · ")].filter(Boolean).join("  |  ");
+        blok.append(el("div", { class: "nr", text: nr + "  " + L.d }), el("b", { text: L.les || L.d }));
+        if (meta) blok.append(el("div", { class: "meta", text: meta }));
+      }
+      list.append(el("div", { class: "day" }, el("div", { class: "dn", text: dn }), blok));
+    });
+  }
+  host.append(card(m.titel + " · week " + (w ? w.wk : "-"), list));
+}
+
 /* ---------- start ---------- */
 async function route() {
   if (location.hash === "#beheer") { show("scrAdmin"); return; }
-  if (data) { show("scrMain"); return; }
-  encBlob = await kvGet("blob");
-  if (encBlob) lockScreen(); else show("scrStart");
+  if (data || rooster) { show("scrMain"); return; }
+  blobs.mpt = (await kvGet(KEYS.mpt)) || null;
+  blobs.rooster = (await kvGet(KEYS.rooster)) || null;
+  if (blobs.mpt || blobs.rooster) lockScreen(); else show("scrStart");
 }
 addEventListener("hashchange", route);
 if (!(window.crypto && crypto.subtle)) {
