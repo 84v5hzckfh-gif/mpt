@@ -529,15 +529,11 @@ function renderPerson(p) {
 /* ---------- zoeken ---------- */
 function doSearch(v) {
   const key = String(v).trim();
-  const sg = $("#sugg"); sg.textContent = ""; msg($("#msgSearch"), "");
-  if (!key) { $("#person").textContent = ""; return; }
-  const p = index.get(key);
+  msg($("#msgSearch"), "");
+  const p = key ? index.get(key) : null;
   if (p) { renderPerson(p); return; }
   $("#person").textContent = "";
-  const hits = [];
-  for (const k of index.keys()) { if (k.startsWith(key)) { hits.push(k); if (hits.length >= 8) break; } }
-  if (!hits.length) { if (key.length >= 4) msg($("#msgSearch"), "Geen persoon met V-nummer " + key + "."); return; }
-  hits.forEach(h => sg.append(el("li", null, (() => { const b = el("button", { type: "button", text: h }); b.addEventListener("click", () => { $("#q").value = h; doSearch(h); $("#q").blur(); }); return b; })())));
+  if (key.length >= 6) msg($("#msgSearch"), "Geen persoon met V-nummer " + key + ".");
 }
 $("#q").addEventListener("input", e => doSearch(e.target.value));
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
