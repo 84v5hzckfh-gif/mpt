@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#004B32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MPT">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>MPT Persoon</title>
+<style>
+:root{
+  --bg:#f3f5f3; --card:#ffffff; --ink:#17201a; --muted:#5d6b62; --line:#dde3de;
+  --brand:#004B32; --brand-ink:#ffffff; --accent:#1B5E20; --field:#fff8dc; --field-line:#e5d9a6;
+  --danger:#B71C1C; --shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1411; --card:#18201b; --ink:#e7ede9; --muted:#9aa89f; --line:#2a352e;
+    --brand:#0b5a3d; --field:#2a2717; --field-line:#4a4428; --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1411; --card:#18201b; --ink:#e7ede9; --muted:#9aa89f; --line:#2a352e;
+  --brand:#0b5a3d; --field:#2a2717; --field-line:#4a4428; --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%;min-height:100vh}
+header.bar{position:sticky;top:0;z-index:5;background:var(--brand);color:var(--brand-ink);padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;display:flex;align-items:center;gap:12px}
+header.bar h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.2px;flex:1}
+header.bar button{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:15px}
+main{max-width:640px;margin:0 auto;padding:16px 16px calc(env(safe-area-inset-bottom) + 32px)}
+.screen[hidden]{display:none!important}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:0 0 14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:700}
+.card h3{font-size:15px;margin:14px 0 8px}
+.lead{font-size:17px;margin:4px 0 12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+label.f{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+input.fill,select.fill{background:var(--field);border-color:var(--field-line)}
+button.btn{display:block;width:100%;font-size:16px;font-weight:600;padding:13px;border-radius:12px;border:0;background:var(--brand);color:#fff;margin-top:12px;cursor:pointer}
+button.btn.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.btn:disabled{opacity:.55}
+.msg{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;display:none}
+.msg.show{display:block}
+.msg.err{background:#fde8e8;color:#8b1a1a}
+.msg.ok{background:#e3f1e4;color:#1b4d20}
+@media (prefers-color-scheme: dark){.msg.err{background:#3a1818;color:#ffb4b4}.msg.ok{background:#16301a;color:#b8e6bd}}
+.search{position:relative}
+.search input{font-size:20px;padding:14px;letter-spacing:.04em}
+.sugg{list-style:none;margin:6px 0 0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.sugg:empty{display:none}
+.sugg li button{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px;font-size:17px;color:var(--ink)}
+.sugg li:first-child button{border-top:0}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kv div{background:var(--bg);border-radius:10px;padding:8px 10px;min-width:0}
+.kv span{display:block;font-size:12px;color:var(--muted)}
+.kv b{font-size:17px;font-weight:650;overflow-wrap:anywhere}
+.rows{margin:0;padding:0;list-style:none}
+.rows li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.rows li:first-child{border-top:0}
+.rows .name{flex:1;min-width:0}
+.rows .name b{display:block;font-weight:600}
+.rows .name small{color:var(--muted);font-size:13px}
+.rows li.total{font-weight:700}
+.badge{display:inline-block;padding:5px 10px;border-radius:999px;font-size:14px;font-weight:650;background:var(--bg);color:var(--ink);white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+.badge.big{font-size:16px;padding:7px 14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.out{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin-top:12px;padding:12px;border-radius:10px;background:var(--bg)}
+.out span{color:var(--muted)}
+.out b{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{padding:7px 6px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:700;border-top:0}
+td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+.status{font-weight:650}
+.foot{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
+.linkish{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:14px;padding:8px;cursor:pointer}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{color:var(--muted);font-style:italic;padding:6px 0}
+.step{display:flex;gap:10px;align-items:flex-start;margin:6px 0}
+.step i{font-style:normal;flex:0 0 24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;display:grid;place-items:center;font-weight:700}
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1 id="title">MPT Persoon</h1>
+  <button id="btnLock" hidden aria-label="Vergrendelen">Vergrendel</button>
+</header>
+<main>
+
+<!-- START: nog geen data -->
+<section id="scrStart" class="screen" hidden>
+  <div class="card">
+    <p class="lead">Nog geen gegevens op dit toestel.</p>
+    <p class="muted">Importeer het versleutelde databestand (<b>MPT_data_….mpt</b>) dat je van je beheerder hebt gekregen.</p>
+    <button class="btn" data-import>Databestand importeren</button>
+    <div class="msg" id="msgStart"></div>
+  </div>
+  <div class="card small muted">
+    <div class="step"><i>1</i><div>Zet deze app eerst op je beginscherm: iPhone → deel-knop → <b>Zet op beginscherm</b>. Android → menu ⋮ → <b>App installeren</b>.</div></div>
+    <div class="step"><i>2</i><div>Sla het .mpt-bestand op in Bestanden / Downloads en importeer het hier.</div></div>
+    <div class="step"><i>3</i><div>Daarna werkt de app zonder internet.</div></div>
+  </div>
+</section>
+
+<!-- LOCK: data aanwezig, versleuteld -->
+<section id="scrLock" class="screen" hidden>
+  <div class="card">
+    <p class="lead">Voer het wachtwoord in</p>
+    <p class="muted small" id="lockInfo"></p>
+    <form id="formUnlock" autocomplete="off">
+      <input type="password" id="pwUnlock" autocomplete="current-password" placeholder="Wachtwoord" aria-label="Wachtwoord">
+      <button class="btn" type="submit" id="btnUnlock">Ontgrendelen</button>
+    </form>
+    <div class="msg" id="msgLock"></div>
+  </div>
+  <div style="text-align:center">
+    <button class="linkish" data-import>Nieuwer databestand importeren</button>
+    <button class="linkish" id="btnWipe">Gegevens van dit toestel wissen</button>
+  </div>
+</section>
+
+<!-- MAIN -->
+<section id="scrMain" class="screen" hidden>
+  <div class="card search">
+    <label class="f" for="q" style="margin-top:0">V-nummer</label>
+    <input id="q" type="search" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="bijv. 452949" class="fill">
+    <ul class="sugg" id="sugg"></ul>
+    <div class="msg" id="msgSearch"></div>
+  </div>
+  <div id="person"></div>
+  <p class="foot" id="dataInfo"></p>
+</section>
+
+<!-- BEHEER (PC) -->
+<section id="scrAdmin" class="screen" hidden>
+  <div class="card">
+    <h2>Beheer · versleutelen</h2>
+    <p class="muted small">Doe dit op de PC. Kies het bestand dat de Excel-knop heeft gemaakt (<b>MPT_export_ONVERSLEUTELD_….json</b>). De app versleutelt het in je browser; er wordt niets verstuurd.</p>
+    <button class="btn sec" id="btnPickExport">1. Exportbestand kiezen</button>
+    <div class="msg" id="msgExport"></div>
+    <label class="f" for="pwNew1">2. Wachtwoord (minimaal 10 tekens)</label>
+    <input type="password" id="pwNew1" autocomplete="new-password">
+    <label class="f" for="pwNew2">Herhaal wachtwoord</label>
+    <input type="password" id="pwNew2" autocomplete="new-password">
+    <button class="btn" id="btnEncrypt" disabled>3. Versleutel en download</button>
+    <div class="msg" id="msgEncrypt"></div>
+    <p class="note">Stuur daarna alleen het <b>.mpt</b>-bestand naar de telefoons en verwijder het onversleutelde .json-bestand. Deel het wachtwoord nooit in hetzelfde bericht als het bestand.</p>
+  </div>
+  <div style="text-align:center"><button class="linkish" id="btnAdminBack">Terug</button></div>
+</section>
+
+<div style="text-align:center" id="adminLinkWrap"><button class="linkish" id="btnAdmin">Beheer (PC)</button></div>
+<input type="file" id="fileIn" hidden>
+</main>
+
+<script>
+"use strict";
+(() => {
+const FORMAT_ENC = "mpt-enc", FORMAT_EXP = "mpt-export";
+const ITER = 600000;
+const IDLE_MS = 10 * 60 * 1000;      // na 10 min niets doen: slot
+const HIDDEN_MS = 2 * 60 * 1000;     // app 2 min op achtergrond: slot
+const $ = s => document.querySelector(s);
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+let encBlob = null;   // versleuteld (mag bewaard worden)
+let data = null;      // ontsleuteld (alleen in geheugen)
+let index = null;     // Map V-nummer -> persoon
+let exportPlain = null;
+let fileMode = "import";
+let idleTimer = null, hiddenAt = 0;
+
+/* ---------- opslag (IndexedDB, met terugval) ---------- */
+let memStore = {};
+function idb() {
+  return new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open("mpt", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("kv");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    } catch (e) { rej(e); }
+  });
+}
+async function kvGet(k) {
+  try { const db = await idb(); return await new Promise((res, rej) => { const q = db.transaction("kv").objectStore("kv").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+  catch (e) { return memStore[k]; }
+}
+async function kvSet(k, v) {
+  memStore[k] = v;
+  try { const db = await idb(); await new Promise((res, rej) => { const t = db.transaction("kv", "readwrite"); t.objectStore("kv").put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {}
+}
+async function kvDel(k) {
+  delete memStore[k];
+  try { const db = await idb(); await new Promise((res) => { const t = db.transaction("kv", "readwrite"); t.objectStore("kv").delete(k); t.oncomplete = res; t.onerror = res; }); } catch (e) {}
+}
+
+/* ---------- crypto ---------- */
+const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function deriveKey(pw, salt, iter) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+const aadOf = w => enc.encode([w.formaat, w.versie, w.iter, w.gemaakt].join("|"));
+async function encryptData(obj, pw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const w = { formaat: FORMAT_ENC, versie: 1, iter: ITER, gemaakt: obj.gemaakt || "" };
+  const key = await deriveKey(pw, salt, ITER);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadOf(w) }, key, enc.encode(JSON.stringify(obj))));
+  return Object.assign(w, { salt: b64(salt), iv: b64(iv), data: b64(ct) });
+}
+async function decryptData(w, pw) {
+  const key = await deriveKey(pw, unb64(w.salt), w.iter);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: aadOf(w) }, key, unb64(w.data));
+  return JSON.parse(dec.decode(pt));
+}
+
+/* ---------- schermen ---------- */
+function show(id) {
+  for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
+  $("#btnLock").hidden = id !== "scrMain";
+  $("#adminLinkWrap").hidden = id === "scrAdmin" || id === "scrMain";
+  window.scrollTo(0, 0);
+}
+function msg(el, text, kind) {
+  el.textContent = text || "";
+  el.className = "msg" + (text ? " show " + (kind || "err") : "");
+}
+function busy(btn, on, label) {
+  if (on) { btn.dataset.l = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + label; }
+  else { btn.disabled = false; btn.textContent = btn.dataset.l || btn.textContent; }
+}
+function lockScreen() {
+  data = null; index = null;
+  $("#person").textContent = ""; $("#q").value = ""; $("#sugg").textContent = "";
+  $("#pwUnlock").value = ""; msg($("#msgLock"), "");
+  $("#lockInfo").textContent = encBlob && encBlob.gemaakt ? "Gegevens van " + encBlob.gemaakt : "";
+  show("scrLock");
+}
+
+/* ---------- bestand kiezen ---------- */
+function readFile(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => { try { res(JSON.parse(String(r.result).replace(/^﻿/, ""))); } catch (e) { rej(new Error("Dit is geen geldig MPT-bestand.")); } };
+    r.onerror = () => rej(new Error("Bestand kon niet gelezen worden."));
+    r.readAsText(file, "utf-8");
+  });
+}
+document.querySelectorAll("[data-import]").forEach(b => b.addEventListener("click", () => { fileMode = "import"; $("#fileIn").value = ""; $("#fileIn").click(); }));
+$("#btnPickExport").addEventListener("click", () => { fileMode = "export"; $("#fileIn").value = ""; $("#fileIn").click(); });
+
+$("#fileIn").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const target = fileMode === "export" ? $("#msgExport") : ($("#scrLock").hidden ? $("#msgStart") : $("#msgLock"));
+  try {
+    const obj = await readFile(f);
+    if (fileMode === "export") {
+      if (obj.formaat !== FORMAT_EXP || !Array.isArray(obj.personen)) throw new Error(obj.formaat === FORMAT_ENC ? "Dit bestand is al versleuteld." : "Dit is geen exportbestand van de Excel-knop.");
+      exportPlain = obj;
+      msg($("#msgExport"), "✓ " + obj.personen.length + " personen gevonden (export van " + (obj.gemaakt || "?") + ").", "ok");
+      checkEncryptReady();
+    } else {
+      if (obj.formaat === FORMAT_EXP) throw new Error("Dit is het ONVERSLEUTELDE exportbestand. Versleutel het eerst via Beheer op de PC en importeer dan het .mpt-bestand.");
+      if (obj.formaat !== FORMAT_ENC || !obj.data || !obj.salt || !obj.iv) throw new Error("Dit is geen MPT-databestand.");
+      encBlob = obj;
+      await kvSet("blob", obj);
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
+      lockScreen();
+      msg($("#msgLock"), "Bestand geïmporteerd. Voer het wachtwoord in.", "ok");
+    }
+  } catch (err) { msg(target, err.message); }
+});
+
+/* ---------- ontgrendelen ---------- */
+$("#formUnlock").addEventListener("submit", async e => {
+  e.preventDefault();
+  const pw = $("#pwUnlock").value;
+  if (!pw) return;
+  const btn = $("#btnUnlock");
+  busy(btn, true, "Bezig…"); msg($("#msgLock"), "");
+  try {
+    data = await decryptData(encBlob, pw);
+    index = new Map(data.personen.map(p => [String(p.v).trim(), p]));
+    $("#pwUnlock").value = "";
+    $("#dataInfo").textContent = "Gegevens van " + (data.gemaakt || "?") + " · " + data.personen.length + " personen";
+    show("scrMain"); armIdle();
+    setTimeout(() => $("#q").focus(), 50);
+  } catch (err) {
+    data = null;
+    msg($("#msgLock"), "Wachtwoord onjuist (of het bestand is beschadigd).");
+  } finally { busy(btn, false); }
+});
+$("#btnLock").addEventListener("click", lockScreen);
+$("#btnWipe").addEventListener("click", async () => {
+  if (!confirm("Alle MPT-gegevens van dit toestel wissen?")) return;
+  await kvDel("blob"); encBlob = null; data = null; show("scrStart");
+});
+
+/* ---------- automatisch op slot ---------- */
+function armIdle() { clearTimeout(idleTimer); if (data) idleTimer = setTimeout(lockScreen, IDLE_MS); }
+["pointerdown", "keydown", "scroll"].forEach(ev => addEventListener(ev, armIdle, { passive: true }));
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) hiddenAt = Date.now();
+  else if (data && hiddenAt && Date.now() - hiddenAt > HIDDEN_MS) lockScreen();
+});
+
+/* ---------- beheer ---------- */
+function checkEncryptReady() {
+  const a = $("#pwNew1").value, b = $("#pwNew2").value;
+  $("#btnEncrypt").disabled = !(exportPlain && a.length >= 10 && a === b);
+}
+$("#pwNew1").addEventListener("input", checkEncryptReady);
+$("#pwNew2").addEventListener("input", checkEncryptReady);
+$("#btnEncrypt").addEventListener("click", async () => {
+  const btn = $("#btnEncrypt");
+  busy(btn, true, "Versleutelen…"); msg($("#msgEncrypt"), "");
+  try {
+    const w = await encryptData(exportPlain, $("#pwNew1").value);
+    const blob = new Blob([JSON.stringify(w)], { type: "application/octet-stream" });
+    const a = document.createElement("a");
+    const d = new Date(), pad = n => String(n).padStart(2, "0");
+    a.download = "MPT_data_" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".mpt";
+    a.href = URL.createObjectURL(blob);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    $("#pwNew1").value = ""; $("#pwNew2").value = ""; exportPlain = null;
+    msg($("#msgExport"), "");
+    msg($("#msgEncrypt"), "✓ Klaar: " + a.download + " staat in je Downloads. Verwijder nu het onversleutelde .json-bestand.", "ok");
+  } catch (err) { msg($("#msgEncrypt"), "Versleutelen mislukt: " + err.message); }
+  finally { busy(btn, false); checkEncryptReady(); }
+});
+$("#btnAdmin").addEventListener("click", () => show("scrAdmin"));
+$("#btnAdminBack").addEventListener("click", () => route());
+
+/* ---------- Excel-rekenregels ---------- */
+function xround(x, d) {
+  if (typeof x !== "number" || !isFinite(x)) return x;
+  const m = Math.pow(10, d), v = Number((Math.abs(x) * m).toPrecision(15));
+  return Math.sign(x) * Math.round(v) / m;
+}
+const xmod = (a, b) => a - b * Math.floor(a / b);
+const mmss = s => Math.floor(s / 60) + ":" + String(xround(xmod(s, 60), 0)).padStart(2, "0");
+function nl(x, dec, fixed) {
+  if (typeof x !== "number" || !isFinite(x)) return "–";
+  return x.toLocaleString("nl-NL", { minimumFractionDigits: fixed ? dec : 0, maximumFractionDigits: dec });
+}
+const num = v => (typeof v === "number" && isFinite(v)) ? v : null;
+
+/* ---------- weergave ---------- */
+const SCORE = [
+  ["onvoldoende", "#FFCDD2", "#B71C1C"], ["niet getest", "#EEEEEE", "#616161"],
+  ["uitstekend", "#1B5E20", "#FFFFFF"], ["goed", "#388E3C", "#FFFFFF"], ["voldoende", "#C8E6C9", "#1B5E20"],
+  ["matig", "#FFE0B2", "#E65100"], ["slecht", "#B71C1C", "#FFFFFF"],
+  ["geslaagd", "#1B5E20", "#FFFFFF"], ["gezakt", "#B71C1C", "#FFFFFF"]
+];
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) { if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+function badge(text, big) {
+  const b = el("span", { class: "badge" + (big ? " big" : ""), text: text || "–" });
+  const low = String(text || "").toLowerCase();
+  for (const [k, bg, fg] of SCORE) if (low.includes(k)) { b.style.background = bg; b.style.color = fg; break; }
+  return b;
+}
+function card(title, ...kids) { return el("div", { class: "card" }, el("h2", { text: title }), ...kids); }
+const clean = s => String(s || "").replace(/:\s*$/, "").trim();
+
+function renderPerson(p) {
+  const T = a => { const v = p.t && p.t[a]; return v === undefined || v === null || v === "" ? "" : String(v); };
+  const L = a => (data.labels && data.labels[a]) || "";
+  const V = a => T(a) || "–";
+  const N = a => num(p.n && p.n[a]);
+  const host = $("#person"); host.textContent = "";
+
+  // Profiel
+  const kv = el("div", { class: "kv" });
+  [["A3", null, String(p.v)], ["D3", "E3"], ["F3", "G3"], ["A4", "B4"], ["D4", "E4"], ["F4", "G4"]].forEach(([l, a, fixed]) =>
+    kv.append(el("div", null, el("span", { text: clean(L(l)) }), el("b", { text: fixed || V(a) }))));
+  host.append(card("Profiel", kv));
+
+  // AMF
+  const amf = el("ul", { class: "rows" });
+  [8, 9, 10, 11].forEach(r => {
+    const rel = T("C" + r) || L("C" + r);
+    const sub = [V("B" + r), rel && rel !== "-" ? rel : ""].filter(Boolean).join(" · ");
+    amf.append(el("li", null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub })), badge(T("D" + r))));
+  });
+  amf.append(el("li", { class: "total" }, el("div", { class: "name" }, el("b", { text: L("A12") })), badge(T("D12"), true)));
+  amf.append(el("li", null, el("div", { class: "name" }, el("b", { text: L("A13") }), el("small", { text: V("B13") })), badge(T("D13"))));
+  host.append(card(L("A6") || "AMF resultaten", amf));
+
+  // FPM
+  const fpm = el("ul", { class: "rows" });
+  let anyF = false;
+  for (let r = 16; r <= 22; r++) {
+    if (T("B" + r) || T("D" + r)) anyF = true;
+    const sub = [T("B" + r) ? "Resultaat " + T("B" + r) : "", T("C" + r) ? "norm " + T("C" + r) : ""].filter(Boolean).join(" · ");
+    fpm.append(el("li", null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub || "–" })), badge(T("D" + r))));
+  }
+  fpm.append(el("li", { class: "total" }, el("div", { class: "name" }, el("b", { text: L("A23") })), badge(T("D23"), true)));
+  host.append(card(L("A14") || "FPM resultaten", anyF ? fpm : el("p", { class: "empty", text: "Geen FPM-gegevens voor deze persoon." })));
+
+  // Kracht
+  const krRows = [];
+  for (let r = 27; r <= 33; r++) krRows.push({ r, naam: L("A" + r), basis: L("B" + r), ratio: L("C" + r), rm: N("D" + r), txt: T("D" + r) });
+  const kr = el("ul", { class: "rows" });
+  krRows.forEach(k => kr.append(el("li", null, el("div", { class: "name" }, el("b", { text: k.naam }), el("small", { text: k.basis + " × " + k.ratio })), el("b", { text: k.txt ? k.txt + " kg" : "–" }))));
+  const sel = el("select", { class: "fill", id: "selRm", "aria-label": "Oefening" });
+  krRows.forEach((k, i) => sel.append(el("option", { value: String(i), text: k.naam })));
+  const def = Number((data.invoer || {}).B36) - 27; sel.value = String(def >= 0 && def < krRows.length ? def : 0);
+  const rmOut = el("div");
+  const drawRm = () => {
+    const k = krRows[Number(sel.value)]; rmOut.textContent = "";
+    if (k.rm === null) { rmOut.append(el("p", { class: "empty", text: "Geen 1RM bekend voor deze oefening." })); return; }
+    const tb = el("table", null, el("thead", null, el("tr", null, el("th", { text: "% 1RM" }), el("th", { text: "kg" }), el("th", { text: "reps" }), el("th", { text: "doel" }))));
+    const body = el("tbody");
+    (data.rm || []).forEach(x => body.append(el("tr", null, el("td", { text: nl(xround(x.pct * 100, 4), 0) + "%" }), el("td", { text: nl(xround(k.rm * x.pct, 1), 1) }), el("td", { text: String(x.reps) }), el("td", { text: x.doel, style: "text-align:left" }))));
+    tb.append(body);
+    rmOut.append(el("div", { class: "out" }, el("span", { text: "1RM " + k.naam }), el("b", { text: nl(k.rm, 1) + " kg" })), el("div", { class: "tablewrap", style: "margin-top:10px" }, tb));
+  };
+  sel.addEventListener("change", drawRm); drawRm();
+  host.append(card(L("A25") || "Kracht", kr, el("h3", { text: "% van 1RM" }), sel, rmOut));
+
+  // Loop
+  const b50 = N("B50"), b72 = N("B72");
+  const inD = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B51 ?? 400) });
+  const inP = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).E51 ?? 80) });
+  const riOut = el("div", { class: "out" });
+  const drawRi = () => {
+    riOut.textContent = "";
+    const d = parseFloat(inD.value.replace(",", ".")), pc = parseFloat(inP.value.replace(",", "."));
+    if (b50 === null) { riOut.append(el("span", { text: "Geen 1000m-waarde bekend" }), el("b", { text: "–" })); return; }
+    if (!isFinite(d) || !isFinite(pc) || d <= 0 || pc <= 0) { riOut.append(el("span", { text: "Vul afstand en % in" }), el("b", { text: "" })); return; }
+    const t = xround(b50 * Math.pow(d / 1000, 1.06) * (100 / pc), 1);
+    riOut.append(el("span", { text: clean(L("A54")) }), el("b", { text: nl(t, 1, true) }),
+      el("span", { text: clean(L("A55")) }), el("b", { text: mmss(t) }),
+      el("span", { text: clean(L("A56")) }), el("b", { text: nl(xround(t * 1000 / d, 1), 1) }));
+  };
+  inD.addEventListener("input", drawRi); inP.addEventListener("input", drawRi); drawRi();
+
+  const pcts = data.pcts || [];
+  const tb = el("table", null, el("thead", null, el("tr", null, el("th", { text: "Afstand" }), ...pcts.map(x => el("th", { text: nl(xround(x * 100, 4), 0) + "%" })))));
+  const tbody = el("tbody");
+  (data.afstanden || []).forEach(a => {
+    const base = a.basis === "B72" ? b72 : b50;
+    tbody.append(el("tr", null, el("td", { text: a.label }), ...pcts.map(x => {
+      if (base === null) return el("td", { text: "–" });
+      const p100 = xround(x * 100, 6);
+      return el("td", { text: mmss(xround(base * Math.pow(a.m / 1000, 1.06) * (100 / p100), 0)) });
+    })));
+  });
+  tb.append(tbody);
+  host.append(card(L("A49") || "Looptraining",
+    el("div", { class: "out", style: "margin-top:0" }, el("span", { text: clean(L("A50")) }), el("b", { text: V("B50") }), el("span", { text: clean(L("A72")) }), el("b", { text: b72 === null ? "–" : nl(xround(b72, 1), 1) })),
+    el("div", { class: "row2" }, el("div", null, el("label", { class: "f", text: "Afstand (m)" }), inD), el("div", null, el("label", { class: "f", text: "% (50–100)" }), inP)),
+    riOut,
+    el("h3", { text: clean(L("A58")) || "Trainingsafstanden" }), el("div", { class: "tablewrap" }, tb)));
+
+  // Speedmars
+  const inKg = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B78 ?? 15) });
+  const inMin = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B81 ?? 60) });
+  const inKm = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B86 ?? 9) });
+  const fOut = el("div", { class: "out" }), c1 = el("div", { class: "out" }), c2 = el("div", { class: "out" });
+  const factor = kg => {
+    let f = 1, cat = "";
+    if (isFinite(kg)) for (const b of (data.bepakking || [])) if (kg >= b.kg) { f = b.factor; cat = b.cat; }
+    return { f, cat };
+  };
+  const drawSm = () => {
+    const kg = parseFloat(inKg.value.replace(",", "."));
+    const { f, cat } = factor(kg);
+    fOut.textContent = ""; c1.textContent = ""; c2.textContent = "";
+    fOut.append(el("span", { text: "Pace-factor" }), el("b", { text: nl(f, 2, true) }), el("span", { text: "Categorie" }), el("b", { text: cat || "–" }));
+    const t = parseFloat(inMin.value.replace(",", "."));
+    if (isFinite(t)) {
+      const afst = xround((10 / 60) * t / f, 2);
+      const pace = afst === 0 ? null : xround(t * 60 / afst, 0);
+      c1.append(el("span", { text: "Realistische afstand" }), el("b", { text: nl(afst, 2, true) + " km" }), el("span", { text: "Pace per km" }), el("b", { text: pace === null ? "–" : mmss(pace) + " min/km" }));
+    }
+    const km = parseFloat(inKm.value.replace(",", "."));
+    if (isFinite(km)) {
+      const tijd = xround(km * 6 * f, 1);
+      const pace = tijd === 0 || km === 0 ? null : xround(tijd * 60 / km, 0);
+      c2.append(el("span", { text: "Realistische tijd" }), el("b", { text: nl(tijd, 1, true) + " min" }), el("span", { text: "Pace per km" }), el("b", { text: pace === null ? "–" : mmss(pace) + " min/km" }));
+    }
+  };
+  [inKg, inMin, inKm].forEach(i => i.addEventListener("input", drawSm)); drawSm();
+
+  const adv = el("div", { class: "out" },
+    el("span", { text: clean(L("A91")) }), el("b", { text: V("B91") }),
+    el("span", { text: clean(L("D91")) + " / " + clean(L("G91")) }), el("b", { text: V("E91") + " / " + V("H91") }),
+    el("span", { text: clean(L("A92")) }), el("b", { text: V("B92") }),
+    el("span", { text: clean(L("D92")) }), el("b", { text: V("E92") }));
+  const st = el("ul", { class: "rows", style: "margin-top:8px" },
+    el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A94")) || "Status" })), el("span", { class: "status", text: V("B94") })),
+    el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A95")) || "Frequentie" }), el("small", { text: V("B95") }))),
+    el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A96")) || "Interval" }), el("small", { text: V("B96") }))));
+
+  host.append(card(L("A76") || "Speedmars",
+    L("A77") ? el("p", { class: "note", style: "margin-top:0", text: L("A77") }) : null,
+    el("label", { class: "f", text: "Bepakking (kg)" }), inKg, fOut,
+    el("h3", { text: clean(L("A80")) || "Hoe ver kom ik?" }), el("label", { class: "f", text: "Tijd (min)" }), inMin, c1,
+    el("h3", { text: clean(L("A85")) || "Hoe lang doe ik erover?" }), el("label", { class: "f", text: "Afstand (km)" }), inKm, c2));
+  host.append(card(L("A90") || "Trainingsadvies", adv, st));
+}
+
+/* ---------- zoeken ---------- */
+function doSearch(v) {
+  const key = String(v).trim();
+  const sg = $("#sugg"); sg.textContent = ""; msg($("#msgSearch"), "");
+  if (!key) { $("#person").textContent = ""; return; }
+  const p = index.get(key);
+  if (p) { renderPerson(p); return; }
+  $("#person").textContent = "";
+  const hits = [];
+  for (const k of index.keys()) { if (k.startsWith(key)) { hits.push(k); if (hits.length >= 8) break; } }
+  if (!hits.length) { if (key.length >= 4) msg($("#msgSearch"), "Geen persoon met V-nummer " + key + "."); return; }
+  hits.forEach(h => sg.append(el("li", null, (() => { const b = el("button", { type: "button", text: h }); b.addEventListener("click", () => { $("#q").value = h; doSearch(h); $("#q").blur(); }); return b; })())));
+}
+$("#q").addEventListener("input", e => doSearch(e.target.value));
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
+
+/* ---------- start ---------- */
+async function route() {
+  if (location.hash === "#beheer") { show("scrAdmin"); return; }
+  if (data) { show("scrMain"); return; }
+  encBlob = await kvGet("blob");
+  if (encBlob) lockScreen(); else show("scrStart");
+}
+addEventListener("hashchange", route);
+if (!(window.crypto && crypto.subtle)) {
+  document.querySelector("main").innerHTML = '<div class="card"><p class="lead">Deze browser ondersteunt de beveiliging niet.</p><p class="muted">Open de app via https in een recente Safari, Chrome of Edge.</p></div>';
+} else {
+  route();
+}
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+})();
+</script>
+</body>
+</html>
