@@ -107,6 +107,11 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 .les .nr{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.02em}
 .les b{display:block;font-weight:600;margin:1px 0 3px}
 .les .meta{font-size:13px;color:var(--muted)}
+.pick{margin-top:10px}
+.pick label{display:flex;gap:12px;align-items:center;padding:10px 2px;border-top:1px solid var(--line);font-size:16px;cursor:pointer}
+.pick label:first-of-type{border-top:0}
+.pick input{width:22px;height:22px;flex:0 0 22px;margin:0;accent-color:var(--brand)}
+.pick small{color:var(--muted);margin-left:auto;font-size:13px}
 </style>
 </head>
 <body>
@@ -174,6 +179,7 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
     <p class="muted small">Doe dit op de PC. Kies het bestand dat de Excel-knop heeft gemaakt (<b>MPT_export_ONVERSLEUTELD_….json</b>) of je rooster (<b>MTC_FTS_overzicht.xlsx</b>). De app versleutelt het in je browser; er wordt niets verstuurd.</p>
     <button class="btn sec" id="btnPickExport">1. Exportbestand kiezen</button>
     <div class="msg" id="msgExport"></div>
+    <div class="pick" id="mesoPick"></div>
     <label class="f" for="pwNew1">2. Wachtwoord (minimaal 10 tekens)</label>
     <input type="password" id="pwNew1" autocomplete="new-password">
     <label class="f" for="pwNew2">Herhaal wachtwoord</label>
@@ -205,6 +211,14 @@ let data = null;      // MPT ontsleuteld (alleen in geheugen)
 let rooster = null;   // rooster ontsleuteld (alleen in geheugen)
 let index = null;     // Map V-nummer -> persoon
 let exportPlain = null, exportKind = null;
+const gekozenMesos = () => [...document.querySelectorAll("#mesoPick input:checked")].map(i => Number(i.value));
+function roosterSelectie() {
+  const keuze = gekozenMesos();
+  const mesos = exportPlain.mesos.filter((_, i) => keuze.includes(i));
+  const nrs = new Set(); mesos.forEach(m => m.weken.forEach(w => w.dagen.forEach(n => n && nrs.add(n))));
+  const lessen = {}; for (const n of nrs) if (exportPlain.lessen[n]) lessen[n] = exportPlain.lessen[n];
+  return Object.assign({}, exportPlain, { mesos, lessen });
+}
 let rState = { meso: 0, wk: 0 };
 let fileMode = "import";
 let idleTimer = null, hiddenAt = 0;
@@ -307,8 +321,14 @@ $("#fileIn").addEventListener("change", async e => {
       msg($("#msgExport"), "Rooster inlezen…", "ok");
       const r = await parseRooster(f);
       exportPlain = r; exportKind = "rooster";
-      const gepland = r.mesos.filter(m => m.weken.some(w => w.dagen.some(Boolean))).length;
-      msg($("#msgExport"), "✓ Rooster: " + r.mesos.length + " meso's (" + gepland + " ingepland), " + Object.keys(r.lessen).length + " lessen.", "ok");
+      const pick = $("#mesoPick"); pick.textContent = "";
+      r.mesos.forEach((m, i) => {
+        const n = m.weken.filter(w => w.dagen.some(Boolean)).length;
+        const cb = el("input", { type: "checkbox", value: String(i) });
+        cb.addEventListener("change", checkEncryptReady);
+        pick.append(el("label", null, cb, el("span", { text: m.naam }), el("small", { text: n ? n + " wk ingepland" : "leeg" })));
+      });
+      msg($("#msgExport"), "✓ Rooster ingelezen. Vink hieronder aan welke meso('s) mee moeten naar de telefoon.", "ok");
       checkEncryptReady();
       return;
     }
@@ -316,7 +336,7 @@ $("#fileIn").addEventListener("change", async e => {
     const obj = await readFile(f);
     if (fileMode === "export") {
       if (obj.formaat !== FORMAT_EXP || !Array.isArray(obj.personen)) throw new Error(obj.formaat === FORMAT_ENC ? "Dit bestand is al versleuteld." : "Dit is geen exportbestand van de Excel-knop of rooster (.xlsx).");
-      exportPlain = obj; exportKind = "mpt";
+      exportPlain = obj; exportKind = "mpt"; $("#mesoPick").textContent = "";
       msg($("#msgExport"), "✓ " + obj.personen.length + " personen gevonden (export van " + (obj.gemaakt || "?") + ").", "ok");
       checkEncryptReady();
     } else {
@@ -376,7 +396,8 @@ document.addEventListener("visibilitychange", () => {
 /* ---------- beheer ---------- */
 function checkEncryptReady() {
   const a = $("#pwNew1").value, b = $("#pwNew2").value;
-  $("#btnEncrypt").disabled = !(exportPlain && a.length >= 10 && a === b);
+  const ok = exportPlain && (exportKind !== "rooster" || gekozenMesos().length > 0);
+  $("#btnEncrypt").disabled = !(ok && a.length >= 10 && a === b);
 }
 $("#pwNew1").addEventListener("input", checkEncryptReady);
 $("#pwNew2").addEventListener("input", checkEncryptReady);
@@ -384,7 +405,7 @@ $("#btnEncrypt").addEventListener("click", async () => {
   const btn = $("#btnEncrypt");
   busy(btn, true, "Versleutelen…"); msg($("#msgEncrypt"), "");
   try {
-    const w = await encryptData(exportPlain, $("#pwNew1").value, exportKind);
+    const w = await encryptData(exportKind === "rooster" ? roosterSelectie() : exportPlain, $("#pwNew1").value, exportKind);
     const blob = new Blob([JSON.stringify(w)], { type: "application/octet-stream" });
     const a = document.createElement("a");
     const d = new Date(), pad = n => String(n).padStart(2, "0");
@@ -393,7 +414,7 @@ $("#btnEncrypt").addEventListener("click", async () => {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     const wasRooster = exportKind === "rooster";
-    $("#pwNew1").value = ""; $("#pwNew2").value = ""; exportPlain = null; exportKind = null;
+    $("#pwNew1").value = ""; $("#pwNew2").value = ""; exportPlain = null; exportKind = null; $("#mesoPick").textContent = "";
     msg($("#msgExport"), "");
     msg($("#msgEncrypt"), "✓ Klaar: " + a.download + " staat in je Downloads." + (wasRooster ? "" : " Verwijder nu het onversleutelde .json-bestand."), "ok");
   } catch (err) { msg($("#msgEncrypt"), "Versleutelen mislukt: " + err.message); }
@@ -726,8 +747,9 @@ function renderRooster() {
     b.addEventListener("click", () => { rState.wk = i; renderRooster(); });
     chips.append(b);
   });
-  host.append(el("div", { class: "card" }, el("label", { class: "f", text: "Meso", style: "margin-top:0" }), sel,
-    m.sub ? el("p", { class: "note", text: m.sub }) : null, chips));
+  const een = ms.length === 1;
+  host.append(el("div", { class: "card" }, een ? null : el("label", { class: "f", text: "Meso", style: "margin-top:0" }), een ? null : sel,
+    m.sub ? el("p", { class: "note", text: m.sub, style: een ? "margin-top:0" : null }) : null, chips));
 
   const w = m.weken[rState.wk];
   const list = el("div");
