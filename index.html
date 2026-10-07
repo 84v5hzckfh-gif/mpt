@@ -112,6 +112,15 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 .pick label:first-of-type{border-top:0}
 .pick input{width:22px;height:22px;flex:0 0 22px;margin:0;accent-color:var(--brand)}
 .pick small{color:var(--muted);margin-left:auto;font-size:13px}
+.banner{border-left:5px solid #E0A030;background:var(--card);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:14px;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.banner b{display:block;margin-bottom:2px}
+details.hist{border-top:1px solid var(--line);padding:4px 0}
+details.hist:first-of-type{border-top:0}
+details.hist summary{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;list-style:none;font-weight:600}
+details.hist summary::-webkit-details-marker{display:none}
+details.hist summary .dt{flex:1;min-width:0}
+details.hist summary .badge{max-width:none}
+details.hist .out{margin:2px 0 10px}
 </style>
 </head>
 <body>
@@ -210,6 +219,7 @@ let blobs = { mpt: null, rooster: null };   // versleuteld (mag bewaard worden)
 let data = null;      // MPT ontsleuteld (alleen in geheugen)
 let rooster = null;   // rooster ontsleuteld (alleen in geheugen)
 let index = null;     // Map V-nummer -> persoon
+let hist = null;      // Map V-nummer -> eerdere tests (oud -> nieuw)
 let exportPlain = null, exportKind = null;
 const gekozenMesos = () => [...document.querySelectorAll("#mesoPick input:checked")].map(i => Number(i.value));
 function roosterSelectie() {
@@ -286,8 +296,27 @@ function busy(btn, on, label) {
   if (on) { btn.dataset.l = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + label; }
   else { btn.disabled = false; btn.textContent = btn.dataset.l || btn.textContent; }
 }
+function bouwIndex() {
+  index = new Map(data.personen.map(p => [String(p.v).trim(), p]));
+  hist = new Map();
+  const H = data.historie;
+  if (!H || !Array.isArray(H.rijen)) return;
+  const kol = (H.kol || []).map(k => String(k).trim());
+  for (const r of H.rijen) {
+    const v = String(r.v).trim(); if (!v) continue;
+    const row = { kol, t: {}, n: {}, lijst: [] };
+    kol.forEach((k, i) => {
+      const tx = r.t && r.t[i] != null ? String(r.t[i]) : "";
+      row.t[k.toLowerCase()] = tx; row.n[k.toLowerCase()] = r.n ? r.n[i] : null;
+      if (tx && i > 0) row.lijst.push([k, tx]);
+    });
+    if (!hist.has(v)) hist.set(v, []);
+    hist.get(v).push(row);
+    if (!index.has(v)) index.set(v, { v, t: {}, n: {}, alleenHistorie: true });
+  }
+}
 function lockScreen() {
-  data = null; rooster = null; index = null;
+  data = null; rooster = null; index = null; hist = null;
   $("#person").textContent = ""; $("#q").value = ""; $("#sugg").textContent = "";
   $("#viewRooster").textContent = "";
   $("#pwUnlock").value = ""; msg($("#msgLock"), "");
@@ -365,7 +394,7 @@ $("#formUnlock").addEventListener("submit", async e => {
       if (!blobs[soort]) continue;
       try {
         const obj = await decryptData(blobs[soort], pw);
-        if (soort === "mpt") { data = obj; index = new Map(data.personen.map(p => [String(p.v).trim(), p])); }
+        if (soort === "mpt") { data = obj; bouwIndex(); }
         else rooster = obj;
       } catch (_) { mislukt.push(soort); }
     }
@@ -598,12 +627,64 @@ function renderPerson(p) {
   host.append(card(L("A90") || "Trainingsadvies", adv, st));
 }
 
+/* ---------- historie: terugval + eerdere tests ---------- */
+const NIEUW_CELLEN = ["B8", "B9", "B11", "D8", "D9", "D10", "D11", "D12", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+const heeftNieuw = p => NIEUW_CELLEN.some(a => { const x = p.t && p.t[a]; return x !== undefined && x !== null && x !== "" && String(x) !== "0"; });
+const testDatum = row => row.t["testdatum amf"] || row.t["testdatum fpm"] || row.t["archief datum"] || "onbekende datum";
+function uitHistorie(p, row) {
+  const g = k => row.t[k.toLowerCase()] || "";
+  const gn = k => num(row.n[k.toLowerCase()]);
+  const L = a => (data.labels && data.labels[a]) || "";
+  const t = { B4: (p.t && p.t.B4) || "", E3: g("Leeftijd"), E4: g("Gewicht (kg)"),
+    B8: g("Bench 1RM"), C8: g("Bench rel"), D8: g("Bench score"), B9: g("DL 1RM"), C9: g("DL rel"), D9: g("DL score"),
+    B10: g("Pull-up reps"), D10: g("PU score"), B11: g("1000m-eq"), D12: g("AMF Totaal"), B13: g("5km sec"), D13: g("5km score"),
+    B16: g("Zwem (m)"), B17: g("FPM Pull-up"), B18: g("Sit-up"), B19: g("Push-up"), B20: g("Speedmars km"), B21: g("Combat sec"), D23: g("FPM EIND"),
+    B50: g("1000m-eq"), B91: g("Speedmars km"), E91: g("Rang"), H91: g("Niveau FPM") };
+  const n = {};
+  const lengte = parseFloat(String(t.B4).replace(",", ".")), gewicht = gn("Gewicht (kg)");
+  if (isFinite(lengte) && lengte > 0 && gewicht !== null) t.G4 = nl(xround(gewicht / (lengte * lengte), 1), 1, true);
+  const bench = gn("Bench 1RM"), dl = gn("DL 1RM");
+  for (let r = 27; r <= 33; r++) {
+    const base = /bench/i.test(L("B" + r)) ? bench : dl;
+    const ratio = parseFloat(String(L("C" + r)).replace(",", "."));
+    if (base === null || !isFinite(ratio)) continue;
+    const val = ratio === 1 ? base : xround(base * ratio, 1);
+    n["D" + r] = val; t["D" + r] = nl(xround(val, 1), 1);
+  }
+  const k1 = gn("1000m-eq"), k5 = gn("5km sec");
+  if (k1 !== null) n.B50 = k1;
+  if (k5 !== null && k5 > 0) n.B72 = k5 * Math.pow(1000 / 5000, 1.06);
+  return { v: p.v, t, n };
+}
+function toonPersoon(p) {
+  const rows = (hist && hist.get(String(p.v).trim())) || [];
+  const terugval = !heeftNieuw(p) && rows.length > 0;
+  renderPerson(terugval ? uitHistorie(p, rows[rows.length - 1]) : p);
+  const host = $("#person");
+  if (terugval) {
+    host.prepend(el("div", { class: "banner" }, el("b", { text: "Geen nieuwe test ingevoerd" }),
+      "Dit is de laatste uitslag uit de historie: test van " + testDatum(rows[rows.length - 1]) + ". FPM-scores per onderdeel, normen en trainingsadvies staan niet in de historie."));
+  }
+  if (rows.length) {
+    const lijst = el("div");
+    rows.slice().reverse().forEach((row, i) => {
+      const sum = el("summary", null, el("span", { class: "dt", text: testDatum(row) + (terugval && i === 0 ? " (hierboven)" : "") }));
+      if (row.t["amf totaal"]) sum.append(badge(row.t["amf totaal"]));
+      if (row.t["fpm eind"]) sum.append(badge(row.t["fpm eind"]));
+      const out = el("div", { class: "out" });
+      row.lijst.forEach(([k, v]) => out.append(el("span", { text: k }), el("b", { text: v })));
+      lijst.append(el("details", { class: "hist" }, sum, out));
+    });
+    host.append(card("Eerdere tests (" + rows.length + ")", lijst));
+  }
+}
+
 /* ---------- zoeken ---------- */
 function doSearch(v) {
   const key = String(v).trim();
   msg($("#msgSearch"), "");
   const p = key ? index.get(key) : null;
-  if (p) { renderPerson(p); return; }
+  if (p) { toonPersoon(p); return; }
   $("#person").textContent = "";
   if (key.length >= 6) msg($("#msgSearch"), "Geen persoon met V-nummer " + key + ".");
 }
@@ -618,7 +699,7 @@ function openMain(mislukt) {
   if (!data) tab = "rooster";
   if (!rooster) tab = "persoon";
   const info = [];
-  if (data) info.push("MPT van " + (data.gemaakt || "?") + " · " + data.personen.length + " personen");
+  if (data) info.push("MPT van " + (data.gemaakt || "?") + " · " + index.size + " personen");
   if (rooster) info.push("Rooster van " + (rooster.gemaakt || "?"));
   if (mislukt && mislukt.length) info.push((mislukt.includes("rooster") ? "Rooster" : "MPT") + " niet ontgrendeld: ander wachtwoord");
   $("#dataInfo").textContent = info.join(" · ");
