@@ -115,6 +115,9 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 .banner{border-left:5px solid #E0A030;background:var(--card);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:14px;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 .banner b{display:block;margin-bottom:2px}
 .card.oud{border-color:#E0A030;border-left-width:5px}
+.rows li.oudrij{box-shadow:inset 4px 0 0 #E0A030;padding-left:12px}
+.oudrij small,.oudkv span,.oudtxt{color:#9A6A00}
+@media (prefers-color-scheme: dark){.oudrij small,.oudkv span,.oudtxt{color:#E8B85A}}
 .card.oud h2{color:#9A6A00}
 @media (prefers-color-scheme: dark){.card.oud h2{color:#E8B85A}}
 details.hist{border-top:1px solid var(--line);padding:4px 0}
@@ -496,23 +499,24 @@ function renderPerson(p) {
   const L = a => (data.labels && data.labels[a]) || "";
   const V = a => T(a) || "–";
   const N = a => num(p.n && p.n[a]);
+  const O = a => (p.oud && p.oud[a]) ? "test " + p.oud[a] : "";
   const host = $("#person"); host.textContent = "";
 
   // Profiel
   const kv = el("div", { class: "kv" });
   [["A3", null, String(p.v)], ["D3", "E3"], ["F3", "G3"], ["A4", "B4"], ["D4", "E4"], ["F4", "G4"]].forEach(([l, a, fixed]) =>
-    kv.append(el("div", null, el("span", { text: clean(L(l)) }), el("b", { text: fixed || V(a) }))));
+    kv.append(el("div", a && O(a) ? { class: "oudkv" } : null, el("span", { text: clean(L(l)) + (a && O(a) ? " · " + O(a) : "") }), el("b", { text: fixed || V(a) }))));
   host.append(card("Profiel", kv));
 
   // AMF
   const amf = el("ul", { class: "rows" });
   [8, 9, 10, 11].forEach(r => {
     const rel = T("C" + r) || L("C" + r);
-    const sub = [V("B" + r), rel && rel !== "-" ? rel : ""].filter(Boolean).join(" · ");
-    amf.append(el("li", null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub })), badge(T("D" + r))));
+    const sub = [V("B" + r), rel && rel !== "-" ? rel : "", O("B" + r)].filter(Boolean).join(" · ");
+    amf.append(el("li", O("B" + r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub })), badge(T("D" + r))));
   });
   amf.append(el("li", { class: "total" }, el("div", { class: "name" }, el("b", { text: L("A12") })), badge(T("D12"), true)));
-  amf.append(el("li", null, el("div", { class: "name" }, el("b", { text: L("A13") }), el("small", { text: V("B13") })), badge(T("D13"))));
+  amf.append(el("li", O("B13") ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A13") }), el("small", { text: [V("B13"), O("B13")].filter(Boolean).join(" · ") })), badge(T("D13"))));
   host.append(card(L("A6") || "AMF resultaten", amf));
 
   // FPM
@@ -520,17 +524,17 @@ function renderPerson(p) {
   let anyF = false;
   for (let r = 16; r <= 22; r++) {
     if (T("B" + r) || T("D" + r)) anyF = true;
-    const sub = [T("B" + r) ? "Resultaat " + T("B" + r) : "", T("C" + r) ? "norm " + T("C" + r) : ""].filter(Boolean).join(" · ");
-    fpm.append(el("li", null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub || "–" })), badge(T("D" + r))));
+    const sub = [T("B" + r) ? "Resultaat " + T("B" + r) : "", T("C" + r) ? "norm " + T("C" + r) : "", O("B" + r)].filter(Boolean).join(" · ");
+    fpm.append(el("li", O("B" + r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub || "–" })), badge(T("D" + r))));
   }
-  fpm.append(el("li", { class: "total" }, el("div", { class: "name" }, el("b", { text: L("A23") })), badge(T("D23"), true)));
+  fpm.append(el("li", { class: "total" + (O("D23") ? " oudrij" : "") }, el("div", { class: "name" }, el("b", { text: L("A23") }), O("D23") ? el("small", { text: O("D23") }) : null), badge(T("D23"), true)));
   host.append(card(L("A14") || "FPM resultaten", anyF ? fpm : el("p", { class: "empty", text: "Geen FPM-gegevens voor deze persoon." })));
 
   // Kracht
   const krRows = [];
   for (let r = 27; r <= 33; r++) krRows.push({ r, naam: L("A" + r), basis: L("B" + r), ratio: L("C" + r), rm: N("D" + r), txt: T("D" + r) });
   const kr = el("ul", { class: "rows" });
-  krRows.forEach(k => kr.append(el("li", null, el("div", { class: "name" }, el("b", { text: k.naam }), el("small", { text: k.basis + " × " + k.ratio })), el("b", { text: k.txt ? k.txt + " kg" : "–" }))));
+  krRows.forEach(k => kr.append(el("li", O("D" + k.r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: k.naam }), el("small", { text: [k.basis + " × " + k.ratio, O("D" + k.r)].filter(Boolean).join(" · ") })), el("b", { text: k.txt ? k.txt + " kg" : "–" }))));
   const sel = el("select", { class: "fill", id: "selRm", "aria-label": "Oefening" });
   krRows.forEach((k, i) => sel.append(el("option", { value: String(i), text: k.naam })));
   const def = Number((data.invoer || {}).B36) - 27; sel.value = String(def >= 0 && def < krRows.length ? def : 0);
@@ -542,7 +546,7 @@ function renderPerson(p) {
     const body = el("tbody");
     (data.rm || []).forEach(x => body.append(el("tr", null, el("td", { text: nl(xround(x.pct * 100, 4), 0) + "%" }), el("td", { text: nl(xround(k.rm * x.pct, 1), 1) }), el("td", { text: String(x.reps) }), el("td", { text: x.doel, style: "text-align:left" }))));
     tb.append(body);
-    rmOut.append(el("div", { class: "out" }, el("span", { text: "1RM " + k.naam }), el("b", { text: nl(k.rm, 1) + " kg" })), el("div", { class: "tablewrap", style: "margin-top:10px" }, tb));
+    rmOut.append(el("div", { class: "out" }, el("span", O("D" + k.r) ? { class: "oudtxt", text: "1RM " + k.naam + " · " + O("D" + k.r) } : { text: "1RM " + k.naam }), el("b", { text: nl(k.rm, 1) + " kg" })), el("div", { class: "tablewrap", style: "margin-top:10px" }, tb));
   };
   sel.addEventListener("change", drawRm); drawRm();
   host.append(card(L("A25") || "Kracht", kr, el("h3", { text: "% van 1RM" }), sel, rmOut));
@@ -577,7 +581,7 @@ function renderPerson(p) {
   });
   tb.append(tbody);
   host.append(card(L("A49") || "Looptraining",
-    el("div", { class: "out", style: "margin-top:0" }, el("span", { text: clean(L("A50")) }), el("b", { text: V("B50") }), el("span", { text: clean(L("A72")) }), el("b", { text: b72 === null ? "–" : nl(xround(b72, 1), 1) })),
+    el("div", { class: "out", style: "margin-top:0" }, el("span", O("B50") ? { class: "oudtxt", text: clean(L("A50")) + " · " + O("B50") } : { text: clean(L("A50")) }), el("b", { text: V("B50") }), el("span", O("B72") ? { class: "oudtxt", text: clean(L("A72")) + " · " + O("B72") } : { text: clean(L("A72")) }), el("b", { text: b72 === null ? "–" : nl(xround(b72, 1), 1) })),
     el("div", { class: "row2" }, el("div", null, el("label", { class: "f", text: "Afstand (m)" }), inD), el("div", null, el("label", { class: "f", text: "% (50–100)" }), inP)),
     riOut,
     el("h3", { text: clean(L("A58")) || "Trainingsafstanden" }), el("div", { class: "tablewrap" }, tb)));
@@ -613,7 +617,7 @@ function renderPerson(p) {
   [inKg, inMin, inKm].forEach(i => i.addEventListener("input", drawSm)); drawSm();
 
   const adv = el("div", { class: "out" },
-    el("span", { text: clean(L("A91")) }), el("b", { text: V("B91") }),
+    el("span", O("B91") ? { class: "oudtxt", text: clean(L("A91")) + " · " + O("B91") } : { text: clean(L("A91")) }), el("b", { text: V("B91") }),
     el("span", { text: clean(L("D91")) + " / " + clean(L("G91")) }), el("b", { text: V("E91") + " / " + V("H91") }),
     el("span", { text: clean(L("A92")) }), el("b", { text: V("B92") }),
     el("span", { text: clean(L("D92")) }), el("b", { text: V("E92") }));
@@ -631,7 +635,7 @@ function renderPerson(p) {
 }
 
 /* ---------- historie: terugval + eerdere tests ---------- */
-const NIEUW_CELLEN = ["B8", "B9", "B11", "D8", "D9", "D10", "D11", "D12", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+const NIEUW_CELLEN = ["B8", "B9", "B10", "B11", "B13", "D8", "D9", "D10", "D11", "D12", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
 const heeftNieuw = p => NIEUW_CELLEN.some(a => { const x = p.t && p.t[a]; return x !== undefined && x !== null && x !== "" && String(x) !== "0"; });
 const testDatum = row => row.t["testdatum amf"] || row.t["testdatum fpm"] || row.t["archief datum"] || "onbekende datum";
 function uitHistorie(p, row) {
@@ -659,11 +663,38 @@ function uitHistorie(p, row) {
   if (k5 !== null && k5 > 0) n.B72 = k5 * Math.pow(1000 / 5000, 1.06);
   return { v: p.v, t, n };
 }
+function mengPersoon(p, row) {
+  const h = uitHistorie(p, row);
+  const dAmf = row.t["testdatum amf"] || testDatum(row), dFpm = row.t["testdatum fpm"] || testDatum(row);
+  const has = (o, a) => { const x = o && o[a]; return x !== undefined && x !== null && x !== "" && String(x) !== "0"; };
+  const q = { v: p.v, t: Object.assign({}, p.t), n: Object.assign({}, p.n), oud: {} }, namen = [];
+  const fpmC = ["B16", "B17", "B18", "B19", "B20", "B21", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+  const G = [
+    ["Bench", has(p.t, "B8"), has(h.t, "B8"), ["B8", "C8", "D8", "D27", "D28", "D29"], ["D27", "D28", "D29"], dAmf],
+    ["Deadlift", has(p.t, "B9"), has(h.t, "B9"), ["B9", "C9", "D9", "D30", "D31", "D32", "D33"], ["D30", "D31", "D32", "D33"], dAmf],
+    ["Pull-ups", has(p.t, "B10") || has(p.t, "D10"), has(h.t, "B10"), ["B10", "D10"], [], dAmf],
+    ["1000 m", has(p.t, "B11"), has(h.t, "B11"), ["B11", "D11", "B50"], ["B50"], dAmf],
+    ["5 km", has(p.t, "B13") || num(p.n && p.n.B72) !== null, has(h.t, "B13"), ["B13", "D13"], ["B72"], dAmf],
+    ["FPM", fpmC.some(a => has(p.t, a)), fpmC.some(a => has(h.t, a)), ["B16", "B17", "B18", "B19", "B20", "B21", "C16", "C17", "C18", "C19", "C20", "C21", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23", "B91", "E91", "H91", "B92", "E92", "B94", "B95", "B96"], [], dFpm],
+    ["", has(p.t, "E4"), has(h.t, "E4"), ["E4", "G4"], [], dAmf],
+    ["", has(p.t, "E3"), has(h.t, "E3"), ["E3"], [], dAmf]
+  ];
+  for (const [naam, nieuw, inHist, tc, nc, d] of G) {
+    if (nieuw || !inHist) continue;
+    tc.forEach(a => { if (h.t[a] !== undefined && h.t[a] !== "") { q.t[a] = h.t[a]; q.oud[a] = d; } else delete q.t[a]; });
+    nc.forEach(a => { if (h.n[a] !== undefined) { q.n[a] = h.n[a]; q.oud[a] = d; } else delete q.n[a]; });
+    if (naam) namen.push(naam + " (" + d + ")");
+  }
+  return { q, namen };
+}
 function toonPersoon(p) {
   const rows = (hist && hist.get(String(p.v).trim())) || [];
   const terugval = !heeftNieuw(p) && rows.length > 0;
-  renderPerson(terugval ? uitHistorie(p, rows[rows.length - 1]) : p);
+  const meng = !terugval && rows.length > 0 ? mengPersoon(p, rows[rows.length - 1]) : null;
+  renderPerson(terugval ? uitHistorie(p, rows[rows.length - 1]) : (meng ? meng.q : p));
   const host = $("#person");
+  if (meng && meng.namen.length) host.prepend(el("div", { class: "banner" }, el("b", { text: "Deels aangevuld uit de historie" }),
+    "Uit een eerdere test: " + meng.namen.join(", ") + ". Deze onderdelen zijn geel gemarkeerd. De rest is nieuw. Het AMF-totaal blijft leeg tot alle onderdelen opnieuw getest zijn."));
   if (terugval) {
     const dat = testDatum(rows[rows.length - 1]);
     host.querySelectorAll(".card").forEach(c => { c.classList.add("oud"); const h = c.querySelector("h2"); if (h) h.textContent += " · test " + dat; });
