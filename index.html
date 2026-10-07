@@ -114,6 +114,9 @@ td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:
 .pick small{color:var(--muted);margin-left:auto;font-size:13px}
 .banner{border-left:5px solid #E0A030;background:var(--card);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:14px;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 .banner b{display:block;margin-bottom:2px}
+.card.oud{border-color:#E0A030;border-left-width:5px}
+.card.oud h2{color:#9A6A00}
+@media (prefers-color-scheme: dark){.card.oud h2{color:#E8B85A}}
 details.hist{border-top:1px solid var(--line);padding:4px 0}
 details.hist:first-of-type{border-top:0}
 details.hist summary{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;list-style:none;font-weight:600}
@@ -662,6 +665,8 @@ function toonPersoon(p) {
   renderPerson(terugval ? uitHistorie(p, rows[rows.length - 1]) : p);
   const host = $("#person");
   if (terugval) {
+    const dat = testDatum(rows[rows.length - 1]);
+    host.querySelectorAll(".card").forEach(c => { c.classList.add("oud"); const h = c.querySelector("h2"); if (h) h.textContent += " · test " + dat; });
     host.prepend(el("div", { class: "banner" }, el("b", { text: "Geen nieuwe test ingevoerd" }),
       "Dit is de laatste uitslag uit de historie: test van " + testDatum(rows[rows.length - 1]) + ". FPM-scores per onderdeel, normen en trainingsadvies staan niet in de historie."));
   }
