@@ -302,6 +302,16 @@ function busy(btn, on, label) {
   if (on) { btn.dataset.l = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + label; }
   else { btn.disabled = false; btn.textContent = btn.dataset.l || btn.textContent; }
 }
+const isNul = x => x === undefined || x === null || String(x).trim() === "" || /^[0.,\s]+$/.test(String(x).trim());
+function serieDatum(n) {
+  const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86400000), pad = v => String(v).padStart(2, "0");
+  return pad(d.getUTCDate()) + "-" + pad(d.getUTCMonth() + 1) + "-" + d.getUTCFullYear();
+}
+function ratioVan(txt) {
+  const t = String(txt || "").trim(); let r = parseFloat(t.replace(",", "."));
+  if (/%$/.test(t)) r = r / 100;
+  return r;
+}
 function bouwIndex() {
   index = new Map(data.personen.map(p => [String(p.v).trim(), p]));
   hist = new Map();
@@ -312,7 +322,8 @@ function bouwIndex() {
     const v = String(r.v).trim(); if (!v) continue;
     const row = { kol, t: {}, n: {}, lijst: [] };
     kol.forEach((k, i) => {
-      const tx = r.t && r.t[i] != null ? String(r.t[i]) : "";
+      let tx = r.t && r.t[i] != null ? String(r.t[i]) : "";
+      if (/datum/i.test(k) && /^\d{5}([.,]\d+)?$/.test(tx.trim())) tx = serieDatum(parseFloat(tx.replace(",", ".")));
       row.t[k.toLowerCase()] = tx; row.n[k.toLowerCase()] = r.n ? r.n[i] : null;
       if (tx && i > 0) row.lijst.push([k, tx]);
     });
@@ -635,8 +646,8 @@ function renderPerson(p) {
 }
 
 /* ---------- historie: terugval + eerdere tests ---------- */
-const NIEUW_CELLEN = ["B8", "B9", "B10", "B11", "B13", "D8", "D9", "D10", "D11", "D12", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
-const heeftNieuw = p => NIEUW_CELLEN.some(a => { const x = p.t && p.t[a]; return x !== undefined && x !== null && x !== "" && String(x) !== "0"; });
+const NIEUW_CELLEN = ["B8", "B9", "B10", "B11", "B13", "D8", "D9", "D10", "D11", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+const heeftNieuw = p => NIEUW_CELLEN.some(a => !isNul(p.t && p.t[a]));
 const testDatum = row => row.t["testdatum amf"] || row.t["testdatum fpm"] || row.t["archief datum"] || "onbekende datum";
 function uitHistorie(p, row) {
   const g = k => row.t[k.toLowerCase()] || "";
@@ -648,12 +659,13 @@ function uitHistorie(p, row) {
     B16: g("Zwem (m)"), B17: g("FPM Pull-up"), B18: g("Sit-up"), B19: g("Push-up"), B20: g("Speedmars km"), B21: g("Combat sec"), D23: g("FPM EIND"),
     B50: g("1000m-eq"), B91: g("Speedmars km"), E91: g("Rang"), H91: g("Niveau FPM") };
   const n = {};
-  const lengte = parseFloat(String(t.B4).replace(",", ".")), gewicht = gn("Gewicht (kg)");
+  let lengte = parseFloat(String(t.B4).replace(",", ".")); const gewicht = gn("Gewicht (kg)");
+  if (lengte > 3) lengte = lengte / 100;
   if (isFinite(lengte) && lengte > 0 && gewicht !== null) t.G4 = nl(xround(gewicht / (lengte * lengte), 1), 1, true);
   const bench = gn("Bench 1RM"), dl = gn("DL 1RM");
   for (let r = 27; r <= 33; r++) {
     const base = /bench/i.test(L("B" + r)) ? bench : dl;
-    const ratio = parseFloat(String(L("C" + r)).replace(",", "."));
+    const ratio = ratioVan(L("C" + r));
     if (base === null || !isFinite(ratio)) continue;
     const val = ratio === 1 ? base : xround(base * ratio, 1);
     n["D" + r] = val; t["D" + r] = nl(xround(val, 1), 1);
@@ -666,7 +678,7 @@ function uitHistorie(p, row) {
 function mengPersoon(p, row) {
   const h = uitHistorie(p, row);
   const dAmf = row.t["testdatum amf"] || testDatum(row), dFpm = row.t["testdatum fpm"] || testDatum(row);
-  const has = (o, a) => { const x = o && o[a]; return x !== undefined && x !== null && x !== "" && String(x) !== "0"; };
+  const has = (o, a) => !isNul(o && o[a]);
   const q = { v: p.v, t: Object.assign({}, p.t), n: Object.assign({}, p.n), oud: {} }, namen = [];
   const fpmC = ["B16", "B17", "B18", "B19", "B20", "B21", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
   const G = [
@@ -685,13 +697,16 @@ function mengPersoon(p, row) {
     nc.forEach(a => { if (h.n[a] !== undefined) { q.n[a] = h.n[a]; q.oud[a] = d; } else delete q.n[a]; });
     if (naam) namen.push(naam + " (" + d + ")");
   }
+  if (["B8", "B9", "B10", "B11"].some(a => isNul(p.t[a]))) delete q.t.D12;
   return { q, namen };
 }
 function toonPersoon(p) {
   const rows = (hist && hist.get(String(p.v).trim())) || [];
   const terugval = !heeftNieuw(p) && rows.length > 0;
   const meng = !terugval && rows.length > 0 ? mengPersoon(p, rows[rows.length - 1]) : null;
-  renderPerson(terugval ? uitHistorie(p, rows[rows.length - 1]) : (meng ? meng.q : p));
+  let toon = terugval ? uitHistorie(p, rows[rows.length - 1]) : (meng ? meng.q : p);
+  if (!terugval && ["B8", "B9", "B10", "B11"].some(a => isNul(toon.t && toon.t[a]))) { toon = Object.assign({}, toon, { t: Object.assign({}, toon.t) }); delete toon.t.D12; }
+  renderPerson(toon);
   const host = $("#person");
   if (meng && meng.namen.length) host.prepend(el("div", { class: "banner" }, el("b", { text: "Deels aangevuld uit de historie" }),
     "Uit een eerdere test: " + meng.namen.join(", ") + ". Deze onderdelen zijn geel gemarkeerd. De rest is nieuw. Het AMF-totaal blijft leeg tot alle onderdelen opnieuw getest zijn."));
