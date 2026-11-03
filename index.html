@@ -282,6 +282,7 @@ async function encryptData(obj, pw, inhoud) {
   return Object.assign(w, { salt: b64(salt), iv: b64(iv), data: b64(ct) });
 }
 async function decryptData(w, pw) {
+  if (w.iter !== ITER) throw new Error("iter");   // altijd 600.000 rondes, net als de instructie-app
   const key = await deriveKey(pw, unb64(w.salt), w.iter);
   const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: aadOf(w) }, key, unb64(w.data));
   return JSON.parse(dec.decode(pt));
@@ -388,6 +389,7 @@ $("#fileIn").addEventListener("change", async e => {
     } else {
       if (obj.formaat === FORMAT_EXP) throw new Error("Dit is het ONVERSLEUTELDE exportbestand. Versleutel het eerst via Beheer op de PC en importeer dan het .mpt-bestand.");
       if (obj.formaat !== FORMAT_ENC || !obj.data || !obj.salt || !obj.iv) throw new Error("Dit is geen MPT-databestand.");
+      if (obj.iter !== ITER) throw new Error("Dit bestand heeft ongeldige beveiligingsinstellingen en wordt geweigerd.");
       const soort = obj.inhoud === "rooster" ? "rooster" : "mpt";
       blobs[soort] = obj;
       await kvSet(KEYS[soort], obj);
