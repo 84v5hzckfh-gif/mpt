@@ -1,6 +1,6 @@
 // MPT Instructie - service worker: app werkt offline.
 // Nieuwe versie uitrollen? Verhoog VERSIE en upload opnieuw.
-const VERSIE = "mpti-v2";
+const VERSIE = "mpti-v3";
 const BESTANDEN = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
