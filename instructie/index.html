@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#7A3E00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MPT Instructie">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>MPT Instructie</title>
+<style>
+:root{
+  --bg:#f3f5f3; --card:#ffffff; --ink:#17201a; --muted:#5d6b62; --line:#dde3de;
+  --brand:#7A3E00; --brand-ink:#ffffff; --accent:#1B5E20; --field:#fff8dc; --field-line:#e5d9a6;
+  --danger:#B71C1C; --shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1411; --card:#18201b; --ink:#e7ede9; --muted:#9aa89f; --line:#2a352e;
+    --brand:#8a4a0a; --field:#2a2717; --field-line:#4a4428; --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1411; --card:#18201b; --ink:#e7ede9; --muted:#9aa89f; --line:#2a352e;
+  --brand:#8a4a0a; --field:#2a2717; --field-line:#4a4428; --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%;min-height:100vh}
+header.bar{position:sticky;top:0;z-index:5;background:var(--brand);color:var(--brand-ink);padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;display:flex;align-items:center;gap:12px}
+header.bar h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.2px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.bar button{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:15px}
+main{max-width:640px;margin:0 auto;padding:16px 16px calc(env(safe-area-inset-bottom) + 32px)}
+.screen[hidden]{display:none!important}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:0 0 14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:700}
+.card h3{font-size:15px;margin:14px 0 8px}
+.lead{font-size:17px;margin:4px 0 12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+label.f{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+input.fill,select.fill{background:var(--field);border-color:var(--field-line)}
+button.btn{display:block;width:100%;font-size:16px;font-weight:600;padding:13px;border-radius:12px;border:0;background:var(--brand);color:#fff;margin-top:12px;cursor:pointer}
+button.btn.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.btn:disabled{opacity:.55}
+.msg{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;display:none}
+.msg.show{display:block}
+.msg.err{background:#fde8e8;color:#8b1a1a}
+.msg.ok{background:#e3f1e4;color:#1b4d20}
+@media (prefers-color-scheme: dark){.msg.err{background:#3a1818;color:#ffb4b4}.msg.ok{background:#16301a;color:#b8e6bd}}
+.search{position:relative}
+.search input{font-size:20px;padding:14px;letter-spacing:.04em}
+.sugg{list-style:none;margin:6px 0 0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.sugg:empty{display:none}
+.sugg li button{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px;font-size:17px;color:var(--ink)}
+.sugg li:first-child button{border-top:0}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kv div{background:var(--bg);border-radius:10px;padding:8px 10px;min-width:0}
+.kv span{display:block;font-size:12px;color:var(--muted)}
+.kv b{font-size:17px;font-weight:650;overflow-wrap:anywhere}
+.rows{margin:0;padding:0;list-style:none}
+.rows li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.rows li:first-child{border-top:0}
+.rows .name{flex:1;min-width:0}
+.rows .name b{display:block;font-weight:600}
+.rows .name small{color:var(--muted);font-size:13px}
+.rows li.total{font-weight:700}
+.badge{display:inline-block;padding:5px 10px;border-radius:999px;font-size:14px;font-weight:650;background:var(--bg);color:var(--ink);white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+.badge.big{font-size:16px;padding:7px 14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.out{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin-top:12px;padding:12px;border-radius:10px;background:var(--bg)}
+.out span{color:var(--muted)}
+.out b{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{padding:7px 6px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:700;border-top:0}
+td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+.status{font-weight:650}
+.foot{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
+.linkish{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:14px;padding:8px;cursor:pointer}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{color:var(--muted);font-style:italic;padding:6px 0}
+.step{display:flex;gap:10px;align-items:flex-start;margin:6px 0}
+.step i{font-style:normal;flex:0 0 24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;display:grid;place-items:center;font-weight:700}
+.tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin:0 0 14px}
+.tabs[hidden]{display:none}
+.tabs button{flex:1;border:0;background:none;color:var(--muted);font-size:15px;font-weight:600;padding:10px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--brand);color:#fff}
+.chips{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0 4px;margin-top:10px}
+.chips button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:15px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.day{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.day:first-of-type{border-top:0}
+.day .dn{flex:0 0 74px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+.les{flex:1;min-width:0;border-left:5px solid var(--line);padding:2px 0 2px 10px}
+.les .nr{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.02em}
+.les b{display:block;font-weight:600;margin:1px 0 3px}
+.les .meta{font-size:13px;color:var(--muted)}
+.pick{margin-top:10px}
+.pick label{display:flex;gap:12px;align-items:center;padding:10px 2px;border-top:1px solid var(--line);font-size:16px;cursor:pointer}
+.pick label:first-of-type{border-top:0}
+.pick input{width:22px;height:22px;flex:0 0 22px;margin:0;accent-color:var(--brand)}
+.pick small{color:var(--muted);margin-left:auto;font-size:13px}
+.banner{border-left:5px solid #E0A030;background:var(--card);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:14px;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.banner b{display:block;margin-bottom:2px}
+.card.oud{border-color:#E0A030;border-left-width:5px}
+.rows li.oudrij{box-shadow:inset 4px 0 0 #E0A030;padding-left:12px}
+.oudrij small,.oudkv span,.oudtxt{color:#9A6A00}
+@media (prefers-color-scheme: dark){.oudrij small,.oudkv span,.oudtxt{color:#E8B85A}}
+.card.oud h2{color:#9A6A00}
+@media (prefers-color-scheme: dark){.card.oud h2{color:#E8B85A}}
+details.hist{border-top:1px solid var(--line);padding:4px 0}
+details.hist:first-of-type{border-top:0}
+details.hist summary{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;list-style:none;font-weight:600}
+details.hist summary::-webkit-details-marker{display:none}
+details.hist summary .dt{flex:1;min-width:0}
+details.hist summary .badge{max-width:none}
+details.hist .out{margin:2px 0 10px}
+input.pw{-webkit-text-security:disc;text-security:disc}
+#cover{position:fixed;inset:0;z-index:99;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:700;letter-spacing:.04em}
+#cover[hidden]{display:none}
+.glist{list-style:none;margin:0;padding:0}
+.glist li{border-top:1px solid var(--line)}
+.glist li:first-child{border-top:0}
+.glist button.g{width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;background:none;border:0;padding:12px 2px;color:var(--ink);font-size:16px;text-align:left;cursor:pointer}
+.glist .code{font-weight:700;min-width:56px}
+.glist .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.glist .nm.dicht{color:var(--muted);font-style:italic}
+.glist small{color:var(--muted);font-size:12px;flex-basis:100%;padding-left:66px}
+.glist .gpw{display:flex;gap:8px;padding:0 0 12px}
+.glist .gpw input{flex:1}
+.glist .gpw button{flex:0 0 auto;width:auto;margin:0;padding:12px 14px}
+.hits{list-style:none;margin:8px 0 0;padding:0}
+.hits li button{width:100%;text-align:left;background:var(--bg);border:0;border-radius:10px;padding:10px 12px;margin-top:6px;font-size:16px;color:var(--ink);cursor:pointer}
+.back{background:none;border:0;color:var(--muted);font-size:15px;padding:0 0 10px;cursor:pointer}
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1 id="title">MPT Instructie</h1>
+  <button id="btnLock" hidden aria-label="Vergrendelen">Vergrendel</button>
+</header>
+<main>
+
+<!-- START: nog geen data -->
+<section id="scrStart" class="screen" hidden>
+  <div class="card">
+    <p class="lead">Nog geen groepen op dit toestel.</p>
+    <p class="muted">Importeer de versleutelde groepsbestanden (<b>G07_MPT_….mpt</b> en <b>G07_Rooster_….mpt</b>). Je kunt er zoveel importeren als je wilt; elke code is één groep.</p>
+    <button class="btn" data-import>Groepsbestand importeren</button>
+    <div class="msg" id="msgStart"></div>
+  </div>
+  <div class="card small muted">
+    <div class="step"><i>1</i><div>Zet deze app eerst op je beginscherm: iPhone → deel-knop → <b>Zet op beginscherm</b>. Android → menu ⋮ → <b>App installeren</b>.</div></div>
+    <div class="step"><i>2</i><div>Sla het .mpt-bestand op in Bestanden / Downloads en importeer het hier.</div></div>
+    <div class="step"><i>3</i><div>Daarna werkt de app zonder internet.</div></div>
+  </div>
+</section>
+
+<!-- GROEPEN -->
+<section id="scrLock" class="screen" hidden>
+  <div class="card">
+    <h2>Groep openen</h2>
+    <p class="muted small">Typ het wachtwoord van een groep. De app zoekt zelf bij welke groep het hoort.</p>
+    <div class="gpwrow" style="display:flex;gap:8px">
+      <input type="text" class="pw" id="pwUnlock" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Wachtwoord" aria-label="Wachtwoord" style="flex:1">
+      <button class="btn" type="button" id="btnUnlock" style="width:auto;margin:0;padding:12px 16px">Open</button>
+    </div>
+    <div class="msg" id="msgLock"></div>
+  </div>
+  <div class="card" id="zoekAlleCard" hidden>
+    <h2>Zoek in alle geopende groepen</h2>
+    <input id="qAll" type="search" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="V-nummer" class="fill">
+    <ul class="hits" id="hitsAll"></ul>
+    <div class="msg" id="msgAll"></div>
+  </div>
+  <div class="card">
+    <h2 id="gTitel">Groepen</h2>
+    <input id="gFilter" type="search" autocomplete="off" placeholder="Filter op code of naam" hidden>
+    <ul class="glist" id="glist"></ul>
+    <p class="muted small" id="lockInfo"></p>
+  </div>
+  <div style="text-align:center">
+    <button class="linkish" data-import>Groepsbestand importeren</button>
+    <button class="linkish" id="btnLockAll" hidden>Alles vergrendelen</button>
+    <button class="linkish" id="btnWipe">Alle groepen van dit toestel wissen</button>
+  </div>
+</section>
+
+<!-- MAIN -->
+<section id="scrMain" class="screen" hidden>
+  <button class="back" type="button" id="btnTerug">‹ Alle groepen</button>
+  <nav class="tabs" id="tabs" hidden>
+    <button type="button" data-tab="persoon" aria-selected="true">Persoon</button>
+    <button type="button" data-tab="rooster" aria-selected="false">Rooster</button>
+  </nav>
+  <div id="viewPersoon">
+    <div class="card search">
+      <label class="f" for="q" style="margin-top:0">V-nummer</label>
+      <input id="q" type="search" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="bijv. 452949" class="fill">
+      <ul class="sugg" id="sugg"></ul>
+      <div class="msg" id="msgSearch"></div>
+    </div>
+    <div id="person"></div>
+  </div>
+  <div id="viewRooster" hidden></div>
+  <div class="msg" id="dataInfoMsg"></div>
+  <p class="foot" id="dataInfo"></p>
+  <div style="text-align:center"><button class="linkish" type="button" id="btnGroepDel">Deze groep van dit toestel verwijderen</button></div>
+</section>
+
+<!-- BEHEER (PC) -->
+<section id="scrAdmin" class="screen" hidden>
+  <div class="card">
+    <h2>Beheer · versleutelen</h2>
+    <p class="muted small">Doe dit op de PC. Kies het bestand dat de Excel-knop heeft gemaakt (<b>MPT_export_ONVERSLEUTELD_….json</b>) of je rooster (<b>MTC_FTS_overzicht.xlsx</b>). De app versleutelt het in je browser; er wordt niets verstuurd.</p>
+    <button class="btn sec" id="btnPickExport">1. Exportbestand kiezen</button>
+    <div class="msg" id="msgExport"></div>
+    <div class="pick" id="mesoPick"></div>
+    <label class="f" for="gCode">2. Code van de groep (zichtbaar in bestandsnaam, bijv. G07)</label>
+    <input type="text" id="gCode" maxlength="10" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false">
+    <label class="f" for="gNaam">Groepsnaam (geheim, alleen zichtbaar in deze app na het wachtwoord)</label>
+    <input type="text" id="gNaam" maxlength="60" autocomplete="off" autocorrect="off" spellcheck="false">
+    <label class="f" for="pwNew1">3. Wachtwoord (minimaal 10 tekens)</label>
+    <input type="text" class="pw" id="pwNew1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label class="f" for="pwNew2">Herhaal wachtwoord</label>
+    <input type="text" class="pw" id="pwNew2" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button class="btn" id="btnEncrypt" disabled>4. Versleutel en download</button>
+    <div class="msg" id="msgEncrypt"></div>
+    <p class="note">Gebruik voor het MPT-bestand en het rooster van één groep <b>dezelfde code, naam en hetzelfde wachtwoord</b>. Houd per groep altijd dezelfde code aan. De bestanden werken ook in de gewone app. Verwijder daarna het onversleutelde .json-bestand en deel het wachtwoord nooit in hetzelfde bericht als het bestand.</p>
+  </div>
+  <div style="text-align:center"><button class="linkish" id="btnAdminBack">Terug</button></div>
+</section>
+
+<div style="text-align:center" id="adminLinkWrap"><button class="linkish" id="btnAdmin">Beheer · bestanden maken</button></div>
+<div id="cover" hidden>MPT Instructie</div>
+<input type="file" id="fileIn" hidden>
+</main>
+
+<script>
+"use strict";
+(() => {
+const FORMAT_ENC = "mpt-enc", FORMAT_EXP = "mpt-export";
+const ITER = 600000;
+const IDLE_MS = 10 * 60 * 1000;      // na 10 min niets doen: slot
+const HIDDEN_MS = 2 * 60 * 1000;     // app 2 min op achtergrond: slot
+const $ = s => document.querySelector(s);
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+const DBNAAM = "mpt-instructie";            // eigen opslag, los van de gewone app
+let groepen = [];     // [{code, mpt, rooster}] versleuteld (mag bewaard worden)
+let open = new Map(); // code -> {naam, data, rooster, index, hist} alleen in geheugen
+let huidig = null;    // code van de geopende groep
+let data = null;      // MPT ontsleuteld (alleen in geheugen)
+let rooster = null;   // rooster ontsleuteld (alleen in geheugen)
+let index = null;     // Map V-nummer -> persoon
+let hist = null;      // Map V-nummer -> eerdere tests (oud -> nieuw)
+let exportPlain = null, exportKind = null;
+const gekozenMesos = () => [...document.querySelectorAll("#mesoPick input:checked")].map(i => Number(i.value));
+function roosterSelectie() {
+  const keuze = gekozenMesos();
+  const mesos = exportPlain.mesos.filter((_, i) => keuze.includes(i));
+  const nrs = new Set(); mesos.forEach(m => m.weken.forEach(w => w.dagen.forEach(n => n && nrs.add(n))));
+  const lessen = {}; for (const n of nrs) if (exportPlain.lessen[n]) lessen[n] = exportPlain.lessen[n];
+  return Object.assign({}, exportPlain, { mesos, lessen });
+}
+let rState = { meso: 0, wk: 0 };
+let fileMode = "import";
+let idleTimer = null, hiddenAt = 0;
+
+/* ---------- opslag (IndexedDB, met terugval) ---------- */
+let memStore = {};
+function idb() {
+  return new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open(DBNAAM, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("kv");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    } catch (e) { rej(e); }
+  });
+}
+async function kvGet(k) {
+  try { const db = await idb(); return await new Promise((res, rej) => { const q = db.transaction("kv").objectStore("kv").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+  catch (e) { return memStore[k]; }
+}
+async function kvSet(k, v) {
+  memStore[k] = v;
+  try { const db = await idb(); await new Promise((res, rej) => { const t = db.transaction("kv", "readwrite"); t.objectStore("kv").put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {}
+}
+async function kvDel(k) {
+  delete memStore[k];
+  try { const db = await idb(); await new Promise((res) => { const t = db.transaction("kv", "readwrite"); t.objectStore("kv").delete(k); t.oncomplete = res; t.onerror = res; }); } catch (e) {}
+}
+
+/* ---------- crypto ---------- */
+const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function deriveKey(pw, salt, iter) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+const aadOf = w => enc.encode([w.formaat, w.versie, w.iter, w.gemaakt].concat(w.inhoud ? [w.inhoud] : []).join("|"));
+async function encryptData(obj, pw, inhoud, code, naam) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const w = { formaat: FORMAT_ENC, versie: 1, iter: ITER, gemaakt: obj.gemaakt || "" };
+  if (inhoud && inhoud !== "mpt") w.inhoud = inhoud;
+  const key = await deriveKey(pw, salt, ITER);
+  const inh = code ? Object.assign({}, obj, { groepInfo: { code, naam: naam || "" } }) : obj;
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadOf(w) }, key, enc.encode(JSON.stringify(inh))));
+  return Object.assign(w, code ? { code } : {}, { salt: b64(salt), iv: b64(iv), data: b64(ct) });
+}
+async function decryptData(w, pw) {
+  if (!geldigeIter(w.iter)) throw new Error("iter");
+  const key = await deriveKey(pw, unb64(w.salt), w.iter);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: aadOf(w) }, key, unb64(w.data));
+  return JSON.parse(dec.decode(pt));
+}
+
+/* ---------- schermen ---------- */
+function show(id) {
+  for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
+  $("#btnLock").hidden = id !== "scrMain";
+  $("#adminLinkWrap").hidden = id === "scrAdmin" || id === "scrMain";
+  $("#btnLock").hidden = !(id === "scrMain" || (id === "scrLock" && open.size > 0));
+  window.scrollTo(0, 0);
+}
+function msg(el, text, kind) {
+  el.textContent = text || "";
+  el.className = "msg" + (text ? " show " + (kind || "err") : "");
+}
+function busy(btn, on, label) {
+  if (on) { btn.dataset.l = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + label; }
+  else { btn.disabled = false; btn.textContent = btn.dataset.l || btn.textContent; }
+}
+const isNul = x => x === undefined || x === null || String(x).trim() === "" || /^[0.,\s]+$/.test(String(x).trim());
+function serieDatum(n) {
+  const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86400000), pad = v => String(v).padStart(2, "0");
+  return pad(d.getUTCDate()) + "-" + pad(d.getUTCMonth() + 1) + "-" + d.getUTCFullYear();
+}
+function ratioVan(txt) {
+  const t = String(txt || "").trim(); let r = parseFloat(t.replace(",", "."));
+  if (/%$/.test(t)) r = r / 100;
+  return r;
+}
+function bouwIndex() {
+  index = new Map((Array.isArray(data.personen) ? data.personen : []).filter(p => p && p.v != null).map(p => [String(p.v).trim(), p]));
+  hist = new Map();
+  const H = data.historie;
+  if (!H || !Array.isArray(H.rijen)) return;
+  const kol = (H.kol || []).map(k => String(k).trim());
+  for (const r of H.rijen) {
+    const v = String(r.v).trim(); if (!v) continue;
+    const row = { kol, t: {}, n: {}, lijst: [] };
+    kol.forEach((k, i) => {
+      let tx = r.t && r.t[i] != null ? String(r.t[i]) : "";
+      if (/datum/i.test(k) && /^\d{5}([.,]\d+)?$/.test(tx.trim())) tx = serieDatum(parseFloat(tx.replace(",", ".")));
+      row.t[k.toLowerCase()] = tx; row.n[k.toLowerCase()] = r.n ? r.n[i] : null;
+      if (tx && i > 0) row.lijst.push([k, tx]);
+    });
+    if (!hist.has(v)) hist.set(v, []);
+    hist.get(v).push(row);
+    if (!index.has(v)) index.set(v, { v, t: {}, n: {}, alleenHistorie: true });
+  }
+}
+const geldigeCode = c => /^[A-Za-z0-9]{1,10}$/.test(c);
+const codeLabel = c => c || "Zonder code";
+const naamLabel = (code, e) => e && e.naam ? e.naam : (code ? "(geen naam)" : "oud bestand");
+const geldigeIter = n => n === ITER;   // beide apps maken altijd 600.000 rondes
+const fmtN = (n, een, meer) => n + " " + (n === 1 ? een : meer);
+function controleerCode(x, code) {
+  const gi = x && x.groepInfo;
+  if ((gi ? String(gi.code || "") : "") !== (code || "")) throw new Error("code");
+  return gi && gi.naam ? String(gi.naam).slice(0, 60) : "";
+}
+async function probeerGroep(g, pw, meld) {
+  // Probeert pw op wat van deze groep nog dicht is (MPT en/of rooster). Geeft true als er iets geopend is.
+  const e = open.get(g.code) || { naamMpt: "", naamRooster: "", data: null, rooster: null, index: null, hist: null };
+  let iets = false;
+  for (const soort of ["mpt", "rooster"]) {
+    const w = g[soort];
+    if (!w || (soort === "mpt" ? e.data : e.rooster)) continue;
+    let x = null; try { x = await decryptData(w, pw); } catch (_) {}
+    if (!x) continue;
+    iets = true;
+    let nm = null; try { nm = controleerCode(x, g.code); } catch (_) {}
+    if (nm === null) { meld.push(codeLabel(g.code) + ": de code op dit bestand klopt niet met de inhoud. Verwijder deze groep en vraag een nieuw bestand."); continue; }
+    if (soort === "mpt") { e.data = x; e.naamMpt = nm; } else { e.rooster = x; e.naamRooster = nm; }
+  }
+  if (!e.data && !e.rooster) { open.delete(g.code); return iets; }
+  const prevD = data; data = e.data; index = null; hist = null;
+  if (e.data) bouwIndex();
+  e.index = index; e.hist = hist; data = prevD; index = null; hist = null;
+  e.naam = e.naamMpt || e.naamRooster;
+  e.naamConflict = !!(e.naamMpt && e.naamRooster && e.naamMpt !== e.naamRooster);
+  e.half = !!((g.mpt && !e.data) || (g.rooster && !e.rooster));
+  open.set(g.code, e);
+  return iets;
+}
+function sluitGroep() { data = null; rooster = null; index = null; hist = null; huidig = null; $("#person").textContent = ""; $("#q").value = ""; $("#viewRooster").textContent = ""; msg($("#msgSearch"), ""); $("#dataInfo").textContent = ""; msg($("#dataInfoMsg"), ""); }
+function wisZoekVelden() {
+  $("#pwUnlock").value = ""; msg($("#msgLock"), "");
+  $("#qAll").value = ""; $("#hitsAll").textContent = ""; msg($("#msgAll"), "");
+  $("#gFilter").value = "";
+}
+function lockScreen() {
+  open = new Map(); sluitGroep(); wisZoekVelden(); resetBeheer();
+  groepenScherm();
+}
+function groepenScherm() {
+  sluitGroep();
+  $("#title").textContent = "MPT Instructie";
+  if (!groepen.length) { $("#glist").textContent = ""; wisZoekVelden(); show("scrStart"); return; }
+  tekenLijst();
+  $("#zoekAlleCard").hidden = open.size === 0;
+  $("#btnLockAll").hidden = open.size === 0;
+  $("#gFilter").hidden = groepen.length < 6;
+  $("#lockInfo").textContent = fmtN(groepen.length, "groep", "groepen") + " op dit toestel · " + open.size + " geopend";
+  show("scrLock");
+  if ($("#qAll").value.trim()) zoekAlle($("#qAll").value); else { $("#hitsAll").textContent = ""; msg($("#msgAll"), ""); }
+}
+function sorteerCode(a, b) { return a.localeCompare(b, "nl", { numeric: true }) || (a.length - b.length) || (a < b ? -1 : a > b ? 1 : 0); }
+function tekenLijst() {
+  const ul = $("#glist"); ul.textContent = "";
+  const f = $("#gFilter").value.trim().toLowerCase();
+  const lijst = groepen.slice().sort((a, b) => sorteerCode(a.code, b.code));
+  for (const g of lijst) {
+    const e = open.get(g.code);
+    const naam = e ? naamLabel(g.code, e) : "vergrendeld";
+    if (f && !(g.code.toLowerCase().includes(f) || (e && naam.toLowerCase().includes(f)))) continue;
+    const delen = [g.mpt ? "MPT " + (g.mpt.gemaakt || "?") : "", g.rooster ? "rooster " + (g.rooster.gemaakt || "?") : ""].filter(Boolean);
+    if (e && e.half) delen.push(e.data ? "rooster nog dicht" : "MPT nog dicht");
+    const btn = el("button", { class: "g", type: "button" },
+      el("span", { class: "code", text: codeLabel(g.code) }),
+      el("span", { class: "nm" + (e ? "" : " dicht"), text: (e ? "" : "🔒 ") + naam }),
+      el("small", { text: delen.join(" · ") }));
+    const li = el("li", null, btn);
+    btn.addEventListener("click", () => {
+      if (open.has(g.code) && !open.get(g.code).half) { naarGroep(g.code); return; }
+      if (li.querySelector(".gpw")) return;
+      const inp = el("input", { type: "text", class: "pw fill", autocomplete: "off", autocapitalize: "off", autocorrect: "off", spellcheck: "false", placeholder: "Wachtwoord " + codeLabel(g.code), "aria-label": "Wachtwoord " + codeLabel(g.code) });
+      const ok = el("button", { class: "btn", type: "button", text: "Open" });
+      const m = el("div", { class: "msg" });
+      const extra = el("div", { style: "display:flex;gap:12px;flex-wrap:wrap" });
+      if (open.has(g.code)) { const gaan = el("button", { class: "linkish", type: "button", text: "Groep bekijken zonder de rest" }); gaan.addEventListener("click", () => naarGroep(g.code)); extra.append(gaan); }
+      const del = el("button", { class: "linkish", type: "button", text: "Deze groep verwijderen" });
+      del.addEventListener("click", () => verwijderGroep(g.code));
+      extra.append(del);
+      let bezig = false;
+      const go = async () => {
+        if (!inp.value || bezig) return;
+        bezig = true; inp.disabled = true; busy(ok, true, ""); msg(m, "");
+        const meld = [];
+        try {
+          const ging = await probeerGroep(g, inp.value, meld);
+          inp.value = "";
+          if (ging && open.has(g.code)) { naarGroep(g.code); if (meld.length) msg($("#dataInfoMsg"), meld.join(" "), "ok"); }
+          else msg(m, meld.length ? meld.join(" ") : "Wachtwoord onjuist voor " + codeLabel(g.code) + ".");
+          if (ging && !open.has(g.code)) { tekenLijst(); }
+        } finally { bezig = false; inp.disabled = false; busy(ok, false); }
+      };
+      ok.addEventListener("click", go);
+      inp.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); go(); } });
+      li.append(el("div", { class: "gpw" }, inp, ok), m, extra);
+      setTimeout(() => inp.focus(), 30);
+    });
+    ul.append(li);
+  }
+}
+async function verwijderGroep(code) {
+  const e = open.get(code);
+  if (!confirm("Groep " + codeLabel(code) + (e && e.naam ? " (" + e.naam + ")" : "") + " van dit toestel verwijderen?")) return;
+  groepen = groepen.filter(g => g.code !== code); open.delete(code);
+  await kvSet("groepen", groepen);
+  groepenScherm();
+  if (groepen.length) msg($("#msgLock"), "Groep " + codeLabel(code) + " verwijderd.", "ok");
+}
+function naarGroep(code, vnr) {
+  const e = open.get(code); if (!e) return;
+  huidig = code; data = e.data; rooster = e.rooster; index = e.index; hist = e.hist;
+  tab = "persoon";
+  const mislukt = e.half ? [e.data ? "rooster" : "mpt"] : [];
+  openMain(mislukt);
+  msg($("#dataInfoMsg"), e.naamConflict ? "Let op: het MPT-bestand en het rooster van " + codeLabel(code) + " hebben een verschillende groepsnaam (" + e.naamMpt + " / " + e.naamRooster + "). Controleer in Beheer." : "", "err");
+  if (vnr) { $("#q").value = vnr; doSearch(vnr); }
+  armIdle();
+}
+function zoekAlle(v) {
+  const key = String(v).trim(), ul = $("#hitsAll"); ul.textContent = ""; msg($("#msgAll"), "");
+  if (!key) return;
+  const hits = [];
+  for (const [code, e] of open) if (e.index && e.index.has(key)) hits.push(code);
+  hits.sort(sorteerCode);
+  for (const code of hits) {
+    const b = el("button", { type: "button", text: codeLabel(code) + " · " + naamLabel(code, open.get(code)) });
+    b.addEventListener("click", () => naarGroep(code, key));
+    ul.append(el("li", null, b));
+  }
+  if (!hits.length && key.length >= 6) msg($("#msgAll"), "Niet gevonden in " + fmtN(open.size, "geopende groep", "geopende groepen") + ". Vergrendelde groepen worden niet doorzocht.");
+}
+$("#qAll").addEventListener("input", e => zoekAlle(e.target.value));
+$("#gFilter").addEventListener("input", tekenLijst);
+
+/* ---------- bestand kiezen ---------- */
+function readFile(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => { try { res(JSON.parse(String(r.result).replace(/^﻿/, ""))); } catch (e) { rej(new Error("Dit is geen geldig MPT-bestand.")); } };
+    r.onerror = () => rej(new Error("Bestand kon niet gelezen worden."));
+    r.readAsText(file, "utf-8");
+  });
+}
+document.querySelectorAll("[data-import]").forEach(b => b.addEventListener("click", () => { fileMode = "import"; const fi = $("#fileIn"); fi.multiple = true; fi.value = ""; fi.click(); }));
+$("#btnPickExport").addEventListener("click", () => { fileMode = "export"; const fi = $("#fileIn"); fi.multiple = false; fi.value = ""; fi.click(); });
+
+async function importeerEen(f) {
+  if (/\.xlsx$/i.test(f.name)) throw new Error("Dit is het Excel-rooster zelf. Versleutel het eerst via Beheer en importeer dan het .mpt-bestand.");
+  const obj = await readFile(f);
+  if (obj.formaat === FORMAT_EXP) throw new Error("Dit is het ONVERSLEUTELDE exportbestand. Versleutel het eerst via Beheer en importeer dan het .mpt-bestand.");
+  if (obj.formaat !== FORMAT_ENC || typeof obj.data !== "string" || typeof obj.salt !== "string" || typeof obj.iv !== "string") throw new Error("Dit is geen MPT-databestand.");
+  if (!geldigeIter(obj.iter)) throw new Error("Dit bestand heeft ongeldige beveiligingsinstellingen en wordt geweigerd.");
+  const soort = obj.inhoud === "rooster" ? "rooster" : "mpt";
+  const code = typeof obj.code === "string" && geldigeCode(obj.code) ? obj.code.toUpperCase() : "";
+  if (typeof obj.code === "string" && obj.code && !geldigeCode(obj.code)) throw new Error("Dit bestand heeft een ongeldige code en wordt geweigerd.");
+  let g = groepen.find(x => x.code === code);
+  if (!g) { g = { code, mpt: null, rooster: null }; groepen.push(g); g[soort] = obj; return "nieuw:" + codeLabel(code); }
+  if (g[soort] && g[soort].data === obj.data) return "dubbel";
+  const vervangen = !!g[soort];
+  g[soort] = obj; open.delete(code);
+  return (vervangen ? "vervangen:" : "toegevoegd:") + codeLabel(code);
+}
+
+$("#fileIn").addEventListener("change", async e => {
+  const files = e.target.files ? [...e.target.files] : [];
+  if (!files.length) return;
+  if (fileMode === "import") {
+    const target = $("#scrLock").hidden ? $("#msgStart") : $("#msgLock");
+    const ok = [], fout = [];
+    for (const f of files) {
+      try { ok.push(await importeerEen(f)); } catch (err) { fout.push(f.name + ": " + err.message); }
+    }
+    if (ok.length) {
+      await kvSet("groepen", groepen);
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
+      groepenScherm();
+    }
+    const doel = ok.length ? $("#msgLock") : target;
+    const pak = pre => ok.filter(x => x.startsWith(pre)).map(x => x.slice(pre.length));
+    const nieuwe = pak("nieuw:"), vervangen = pak("vervangen:"), toegevoegd = pak("toegevoegd:"), dubbel = ok.filter(x => x === "dubbel").length;
+    const kort = l => l.length > 6 ? l.slice(0, 6).join(", ") + " en " + (l.length - 6) + " meer" : l.join(", ");
+    const delen = [];
+    if (nieuwe.length) delen.push(fmtN(nieuwe.length, "nieuwe groep", "nieuwe groepen") + ": " + kort(nieuwe) + ".");
+    if (vervangen.length) delen.push("Vervangen door nieuwe versie: " + kort(vervangen) + ".");
+    if (toegevoegd.length) delen.push("Toegevoegd aan bestaande groep: " + kort(toegevoegd) + ".");
+    if (dubbel) delen.push(fmtN(dubbel, "bestand stond", "bestanden stonden") + " er al.");
+    if (ok.length) delen.push("Typ het wachtwoord om te openen.");
+    if (fout.length) delen.push(fout.length > 5 ? fout.slice(0, 5).join(" ") + " (+" + (fout.length - 5) + " meer geweigerd)" : fout.join(" "));
+    msg(doel, delen.join(" "), fout.length ? "err" : "ok");
+    return;
+  }
+  const f = files[0];
+  // export (Beheer): altijd eerst alles van het vorige bestand weggooien
+  exportPlain = null; exportKind = null; $("#mesoPick").textContent = ""; msg($("#msgEncrypt"), ""); checkEncryptReady();
+  try {
+    if (/\.xlsx$/i.test(f.name)) {
+      msg($("#msgExport"), "Rooster inlezen…", "ok");
+      const r = await parseRooster(f);
+      exportPlain = r; exportKind = "rooster";
+      const pick = $("#mesoPick"); pick.textContent = "";
+      r.mesos.forEach((m, i) => {
+        const n = m.weken.filter(w => w.dagen.some(Boolean)).length;
+        const cb = el("input", { type: "checkbox", value: String(i) });
+        cb.addEventListener("change", checkEncryptReady);
+        pick.append(el("label", null, cb, el("span", { text: m.naam }), el("small", { text: n ? n + " wk ingepland" : "leeg" })));
+      });
+      msg($("#msgExport"), "✓ Rooster ingelezen. Vink hieronder aan welke meso('s) mee moeten naar de telefoon.", "ok");
+    } else {
+      const obj = await readFile(f);
+      if (obj.formaat !== FORMAT_EXP || !Array.isArray(obj.personen)) throw new Error(obj.formaat === FORMAT_ENC ? "Dit bestand is al versleuteld." : "Dit is geen exportbestand van de Excel-knop of rooster (.xlsx).");
+      exportPlain = obj; exportKind = "mpt";
+      msg($("#msgExport"), "✓ " + fmtN(obj.personen.length, "persoon", "personen") + " gevonden (export van " + (obj.gemaakt || "?") + ").", "ok");
+    }
+  } catch (err) { exportPlain = null; exportKind = null; $("#mesoPick").textContent = ""; msg($("#msgExport"), err.message); }
+  checkEncryptReady();
+});
+
+/* ---------- ontgrendelen ---------- */
+let zoekBezig = false;
+async function probeerAlle() {
+  const pw = $("#pwUnlock").value;
+  if (!pw || zoekBezig) return;
+  zoekBezig = true;
+  const btn = $("#btnUnlock"), inp = $("#pwUnlock");
+  inp.disabled = true; busy(btn, true, ""); msg($("#msgLock"), "");
+  // eerst groepen die nog (deels) dicht zijn of een klaargezette versie hebben
+  const kandidaten = groepen.filter(g => !open.has(g.code) || open.get(g.code).half);
+  const meld = [];
+  let gevonden = null, n = 0;
+  try {
+    for (const g of kandidaten) {
+      n++; msg($("#msgLock"), "Zoeken… " + n + " van " + kandidaten.length, "ok");
+      if (await probeerGroep(g, pw, meld)) { gevonden = g.code; break; }
+    }
+    inp.value = "";
+    groepenScherm();
+    msg($("#msgLock"), "");
+    if (gevonden !== null && open.has(gevonden)) {
+      naarGroep(gevonden);
+      if (meld.length) { const el2 = $("#dataInfoMsg"); const extra = el2.textContent; msg(el2, meld.join(" ") + (extra ? " " + extra : ""), extra ? "err" : "ok"); }
+    }
+    else if (gevonden !== null) msg($("#msgLock"), meld.join(" ") || "Groep " + codeLabel(gevonden) + " kon niet geopend worden.", "err");
+    else if (meld.length) msg($("#msgLock"), meld.join(" "));
+    else msg($("#msgLock"), kandidaten.length ? "Dit wachtwoord past bij geen van de " + fmtN(kandidaten.length, "groep", "groepen") + " die nog dicht zijn." : "Alle groepen zijn al open.");
+    armIdle();
+  } finally { zoekBezig = false; inp.disabled = false; busy(btn, false); }
+}
+$("#btnUnlock").addEventListener("click", probeerAlle);
+$("#pwUnlock").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); probeerAlle(); } });
+$("#btnLock").addEventListener("click", lockScreen);
+$("#btnLockAll").addEventListener("click", lockScreen);
+$("#btnTerug").addEventListener("click", groepenScherm);
+$("#btnWipe").addEventListener("click", async () => {
+  if (!confirm("Alle groepen van dit toestel wissen?")) return;
+  await kvDel("groepen");
+  groepen = []; open = new Map(); sluitGroep(); wisZoekVelden(); $("#glist").textContent = ""; show("scrStart");
+});
+$("#btnGroepDel").addEventListener("click", () => { if (huidig !== null) verwijderGroep(huidig); });
+
+/* ---------- afdekscherm bij app-wissel ---------- */
+const moetDekken = () => open.size > 0 || !$("#scrAdmin").hidden;
+function dek(aan) { $("#cover").hidden = !aan; }
+addEventListener("blur", () => { if (moetDekken()) dek(true); });
+addEventListener("focus", () => dek(false));
+addEventListener("pagehide", () => dek(true));
+addEventListener("pageshow", () => dek(false));
+document.addEventListener("visibilitychange", () => dek(document.hidden && moetDekken()));
+
+/* ---------- automatisch op slot ---------- */
+function opInactief() {
+  const inBeheer = !$("#scrAdmin").hidden;
+  resetBeheer();
+  if (open.size) { open = new Map(); sluitGroep(); wisZoekVelden(); }
+  if (!inBeheer) groepenScherm();
+}
+function armIdle() { clearTimeout(idleTimer); if (moetDekken()) idleTimer = setTimeout(opInactief, IDLE_MS); }
+["pointerdown", "keydown", "scroll"].forEach(ev => addEventListener(ev, armIdle, { passive: true }));
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) hiddenAt = Date.now();
+  else if (moetDekken() && hiddenAt && Date.now() - hiddenAt > HIDDEN_MS) opInactief();
+});
+
+/* ---------- beheer ---------- */
+function checkEncryptReady() {
+  const a = $("#pwNew1").value, b = $("#pwNew2").value;
+  const ok = exportPlain && (exportKind !== "rooster" || gekozenMesos().length > 0);
+  $("#btnEncrypt").disabled = !(ok && geldigeCode($("#gCode").value.trim()) && $("#gNaam").value.trim() && a.length >= 10 && a === b);
+}
+function resetBeheer() {
+  ["#pwNew1", "#pwNew2", "#gCode", "#gNaam"].forEach(s => { $(s).value = ""; });
+  exportPlain = null; exportKind = null; $("#mesoPick").textContent = "";
+  msg($("#msgExport"), "");
+  checkEncryptReady();
+}
+$("#gCode").addEventListener("input", checkEncryptReady);
+$("#gNaam").addEventListener("input", checkEncryptReady);
+$("#pwNew1").addEventListener("input", checkEncryptReady);
+$("#pwNew2").addEventListener("input", checkEncryptReady);
+$("#btnEncrypt").addEventListener("click", async () => {
+  const btn = $("#btnEncrypt");
+  busy(btn, true, "Versleutelen…"); msg($("#msgEncrypt"), "");
+  try {
+    const code = $("#gCode").value.trim().toUpperCase(), naam = $("#gNaam").value.trim().slice(0, 60);
+    if (!geldigeCode(code)) throw new Error("Code mag alleen letters en cijfers bevatten (max. 10).");
+    const w = await encryptData(exportKind === "rooster" ? roosterSelectie() : exportPlain, $("#pwNew1").value, exportKind, code, naam);
+    const blob = new Blob([JSON.stringify(w)], { type: "application/octet-stream" });
+    const a = document.createElement("a");
+    const d = new Date(), pad = n => String(n).padStart(2, "0");
+    a.download = code + (exportKind === "rooster" ? "_Rooster_" : "_MPT_") + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".mpt";
+    a.href = URL.createObjectURL(blob);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    const wasRooster = exportKind === "rooster", naamBestand = a.download;
+    resetBeheer();
+    msg($("#msgEncrypt"), "✓ Klaar: " + naamBestand + " staat in je Downloads." + (wasRooster ? "" : " Verwijder nu het onversleutelde .json-bestand."), "ok");
+  } catch (err) { msg($("#msgEncrypt"), "Versleutelen mislukt: " + err.message); }
+  finally { busy(btn, false); checkEncryptReady(); }
+});
+$("#btnAdmin").addEventListener("click", () => { resetBeheer(); msg($("#msgEncrypt"), ""); show("scrAdmin"); armIdle(); });
+$("#btnAdminBack").addEventListener("click", () => {
+  resetBeheer(); msg($("#msgEncrypt"), "");
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  route();
+});
+
+/* ---------- Excel-rekenregels ---------- */
+function xround(x, d) {
+  if (typeof x !== "number" || !isFinite(x)) return x;
+  const m = Math.pow(10, d), v = Number((Math.abs(x) * m).toPrecision(15));
+  return Math.sign(x) * Math.round(v) / m;
+}
+const xmod = (a, b) => a - b * Math.floor(a / b);
+const mmss = s => Math.floor(s / 60) + ":" + String(xround(xmod(s, 60), 0)).padStart(2, "0");
+function nl(x, dec, fixed) {
+  if (typeof x !== "number" || !isFinite(x)) return "–";
+  return x.toLocaleString("nl-NL", { minimumFractionDigits: fixed ? dec : 0, maximumFractionDigits: dec });
+}
+const num = v => (typeof v === "number" && isFinite(v)) ? v : null;
+
+/* ---------- weergave ---------- */
+const SCORE = [
+  ["onvoldoende", "#FFCDD2", "#B71C1C"], ["niet getest", "#EEEEEE", "#616161"],
+  ["uitstekend", "#1B5E20", "#FFFFFF"], ["goed", "#388E3C", "#FFFFFF"], ["voldoende", "#C8E6C9", "#1B5E20"],
+  ["matig", "#FFE0B2", "#E65100"], ["slecht", "#B71C1C", "#FFFFFF"],
+  ["geslaagd", "#1B5E20", "#FFFFFF"], ["gezakt", "#B71C1C", "#FFFFFF"]
+];
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) { if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+function badge(text, big) {
+  const b = el("span", { class: "badge" + (big ? " big" : ""), text: text || "–" });
+  const low = String(text || "").toLowerCase();
+  for (const [k, bg, fg] of SCORE) if (low.includes(k)) { b.style.background = bg; b.style.color = fg; break; }
+  return b;
+}
+function card(title, ...kids) { return el("div", { class: "card" }, el("h2", { text: title }), ...kids); }
+const clean = s => String(s || "").replace(/:\s*$/, "").trim();
+
+function renderPerson(p) {
+  const T = a => { const v = p.t && p.t[a]; return v === undefined || v === null || v === "" ? "" : String(v); };
+  const L = a => (data.labels && data.labels[a]) || "";
+  const V = a => T(a) || "–";
+  const N = a => num(p.n && p.n[a]);
+  const O = a => (p.oud && p.oud[a]) ? "test " + p.oud[a] : "";
+  const host = $("#person"); host.textContent = "";
+
+  // Profiel
+  const kv = el("div", { class: "kv" });
+  [["A3", null, String(p.v)], ["D3", "E3"], ["F3", "G3"], ["A4", "B4"], ["D4", "E4"], ["F4", "G4"]].forEach(([l, a, fixed]) =>
+    kv.append(el("div", a && O(a) ? { class: "oudkv" } : null, el("span", { text: clean(L(l)) + (a && O(a) ? " · " + O(a) : "") }), el("b", { text: fixed || V(a) }))));
+  host.append(card("Profiel", kv));
+
+  // AMF
+  const amf = el("ul", { class: "rows" });
+  [8, 9, 10, 11].forEach(r => {
+    const rel = T("C" + r) || L("C" + r);
+    const sub = [V("B" + r), rel && rel !== "-" ? rel : "", O("B" + r)].filter(Boolean).join(" · ");
+    amf.append(el("li", O("B" + r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub })), badge(T("D" + r))));
+  });
+  amf.append(el("li", { class: "total" }, el("div", { class: "name" }, el("b", { text: L("A12") })), badge(T("D12"), true)));
+  amf.append(el("li", O("B13") ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A13") }), el("small", { text: [V("B13"), O("B13")].filter(Boolean).join(" · ") })), badge(T("D13"))));
+  host.append(card(L("A6") || "AMF resultaten", amf));
+
+  // FPM
+  const fpm = el("ul", { class: "rows" });
+  let anyF = false;
+  for (let r = 16; r <= 22; r++) {
+    if (T("B" + r) || T("D" + r)) anyF = true;
+    const sub = [T("B" + r) ? "Resultaat " + T("B" + r) : "", T("C" + r) ? "norm " + T("C" + r) : "", O("B" + r)].filter(Boolean).join(" · ");
+    fpm.append(el("li", O("B" + r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub || "–" })), badge(T("D" + r))));
+  }
+  fpm.append(el("li", { class: "total" + (O("D23") ? " oudrij" : "") }, el("div", { class: "name" }, el("b", { text: L("A23") }), O("D23") ? el("small", { text: O("D23") }) : null), badge(T("D23"), true)));
+  host.append(card(L("A14") || "FPM resultaten", anyF ? fpm : el("p", { class: "empty", text: "Geen FPM-gegevens voor deze persoon." })));
+
+  // Kracht
+  const krRows = [];
+  for (let r = 27; r <= 33; r++) krRows.push({ r, naam: L("A" + r), basis: L("B" + r), ratio: L("C" + r), rm: N("D" + r), txt: T("D" + r) });
+  const kr = el("ul", { class: "rows" });
+  krRows.forEach(k => kr.append(el("li", O("D" + k.r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: k.naam }), el("small", { text: [k.basis + " × " + k.ratio, O("D" + k.r)].filter(Boolean).join(" · ") })), el("b", { text: k.txt ? k.txt + " kg" : "–" }))));
+  const sel = el("select", { class: "fill", id: "selRm", "aria-label": "Oefening" });
+  krRows.forEach((k, i) => sel.append(el("option", { value: String(i), text: k.naam })));
+  const def = Number((data.invoer || {}).B36) - 27; sel.value = String(def >= 0 && def < krRows.length ? def : 0);
+  const rmOut = el("div");
+  const drawRm = () => {
+    const k = krRows[Number(sel.value)]; rmOut.textContent = "";
+    if (k.rm === null) { rmOut.append(el("p", { class: "empty", text: "Geen 1RM bekend voor deze oefening." })); return; }
+    const tb = el("table", null, el("thead", null, el("tr", null, el("th", { text: "% 1RM" }), el("th", { text: "kg" }), el("th", { text: "reps" }), el("th", { text: "doel" }))));
+    const body = el("tbody");
+    (data.rm || []).forEach(x => body.append(el("tr", null, el("td", { text: nl(xround(x.pct * 100, 4), 0) + "%" }), el("td", { text: nl(xround(k.rm * x.pct, 1), 1) }), el("td", { text: String(x.reps) }), el("td", { text: x.doel, style: "text-align:left" }))));
+    tb.append(body);
+    rmOut.append(el("div", { class: "out" }, el("span", O("D" + k.r) ? { class: "oudtxt", text: "1RM " + k.naam + " · " + O("D" + k.r) } : { text: "1RM " + k.naam }), el("b", { text: nl(k.rm, 1) + " kg" })), el("div", { class: "tablewrap", style: "margin-top:10px" }, tb));
+  };
+  sel.addEventListener("change", drawRm); drawRm();
+  host.append(card(L("A25") || "Kracht", kr, el("h3", { text: "% van 1RM" }), sel, rmOut));
+
+  // Loop
+  const b50 = N("B50"), b72 = N("B72");
+  const inD = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B51 ?? 400) });
+  const inP = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).E51 ?? 80) });
+  const riOut = el("div", { class: "out" });
+  const drawRi = () => {
+    riOut.textContent = "";
+    const d = parseFloat(inD.value.replace(",", ".")), pc = parseFloat(inP.value.replace(",", "."));
+    if (b50 === null) { riOut.append(el("span", { text: "Geen 1000m-waarde bekend" }), el("b", { text: "–" })); return; }
+    if (!isFinite(d) || !isFinite(pc) || d <= 0 || pc <= 0) { riOut.append(el("span", { text: "Vul afstand en % in" }), el("b", { text: "" })); return; }
+    const t = xround(b50 * Math.pow(d / 1000, 1.06) * (100 / pc), 1);
+    riOut.append(el("span", { text: clean(L("A54")) }), el("b", { text: nl(t, 1, true) }),
+      el("span", { text: clean(L("A55")) }), el("b", { text: mmss(t) }),
+      el("span", { text: clean(L("A56")) }), el("b", { text: nl(xround(t * 1000 / d, 1), 1) }));
+  };
+  inD.addEventListener("input", drawRi); inP.addEventListener("input", drawRi); drawRi();
+
+  const pcts = data.pcts || [];
+  const tb = el("table", null, el("thead", null, el("tr", null, el("th", { text: "Afstand" }), ...pcts.map(x => el("th", { text: nl(xround(x * 100, 4), 0) + "%" })))));
+  const tbody = el("tbody");
+  (data.afstanden || []).forEach(a => {
+    const base = a.basis === "B72" ? b72 : b50;
+    tbody.append(el("tr", null, el("td", { text: a.label }), ...pcts.map(x => {
+      if (base === null) return el("td", { text: "–" });
+      const p100 = xround(x * 100, 6);
+      return el("td", { text: mmss(xround(base * Math.pow(a.m / 1000, 1.06) * (100 / p100), 0)) });
+    })));
+  });
+  tb.append(tbody);
+  host.append(card(L("A49") || "Looptraining",
+    el("div", { class: "out", style: "margin-top:0" }, el("span", O("B50") ? { class: "oudtxt", text: clean(L("A50")) + " · " + O("B50") } : { text: clean(L("A50")) }), el("b", { text: V("B50") }), el("span", O("B72") ? { class: "oudtxt", text: clean(L("A72")) + " · " + O("B72") } : { text: clean(L("A72")) }), el("b", { text: b72 === null ? "–" : nl(xround(b72, 1), 1) })),
+    el("div", { class: "row2" }, el("div", null, el("label", { class: "f", text: "Afstand (m)" }), inD), el("div", null, el("label", { class: "f", text: "% (50–100)" }), inP)),
+    riOut,
+    el("h3", { text: clean(L("A58")) || "Trainingsafstanden" }), el("div", { class: "tablewrap" }, tb)));
+
+  // Speedmars
+  const inKg = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B78 ?? 15) });
+  const inMin = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B81 ?? 60) });
+  const inKm = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B86 ?? 9) });
+  const fOut = el("div", { class: "out" }), c1 = el("div", { class: "out" }), c2 = el("div", { class: "out" });
+  const factor = kg => {
+    let f = 1, cat = "";
+    if (isFinite(kg)) for (const b of (data.bepakking || [])) if (kg >= b.kg) { f = b.factor; cat = b.cat; }
+    return { f, cat };
+  };
+  const drawSm = () => {
+    const kg = parseFloat(inKg.value.replace(",", "."));
+    const { f, cat } = factor(kg);
+    fOut.textContent = ""; c1.textContent = ""; c2.textContent = "";
+    fOut.append(el("span", { text: "Pace-factor" }), el("b", { text: nl(f, 2, true) }), el("span", { text: "Categorie" }), el("b", { text: cat || "–" }));
+    const t = parseFloat(inMin.value.replace(",", "."));
+    if (isFinite(t)) {
+      const afst = xround((10 / 60) * t / f, 2);
+      const pace = afst === 0 ? null : xround(t * 60 / afst, 0);
+      c1.append(el("span", { text: "Realistische afstand" }), el("b", { text: nl(afst, 2, true) + " km" }), el("span", { text: "Pace per km" }), el("b", { text: pace === null ? "–" : mmss(pace) + " min/km" }));
+    }
+    const km = parseFloat(inKm.value.replace(",", "."));
+    if (isFinite(km)) {
+      const tijd = xround(km * 6 * f, 1);
+      const pace = tijd === 0 || km === 0 ? null : xround(tijd * 60 / km, 0);
+      c2.append(el("span", { text: "Realistische tijd" }), el("b", { text: nl(tijd, 1, true) + " min" }), el("span", { text: "Pace per km" }), el("b", { text: pace === null ? "–" : mmss(pace) + " min/km" }));
+    }
+  };
+  [inKg, inMin, inKm].forEach(i => i.addEventListener("input", drawSm)); drawSm();
+
+  const adv = el("div", { class: "out" },
+    el("span", O("B91") ? { class: "oudtxt", text: clean(L("A91")) + " · " + O("B91") } : { text: clean(L("A91")) }), el("b", { text: V("B91") }),
+    el("span", { text: clean(L("D91")) + " / " + clean(L("G91")) }), el("b", { text: V("E91") + " / " + V("H91") }),
+    el("span", { text: clean(L("A92")) }), el("b", { text: V("B92") }),
+    el("span", { text: clean(L("D92")) }), el("b", { text: V("E92") }));
+  const st = el("ul", { class: "rows", style: "margin-top:8px" },
+    el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A94")) || "Status" })), el("span", { class: "status", text: V("B94") })),
+    el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A95")) || "Frequentie" }), el("small", { text: V("B95") }))),
+    el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A96")) || "Interval" }), el("small", { text: V("B96") }))));
+
+  host.append(card(L("A76") || "Speedmars",
+    L("A77") ? el("p", { class: "note", style: "margin-top:0", text: L("A77") }) : null,
+    el("label", { class: "f", text: "Bepakking (kg)" }), inKg, fOut,
+    el("h3", { text: clean(L("A80")) || "Hoe ver kom ik?" }), el("label", { class: "f", text: "Tijd (min)" }), inMin, c1,
+    el("h3", { text: clean(L("A85")) || "Hoe lang doe ik erover?" }), el("label", { class: "f", text: "Afstand (km)" }), inKm, c2));
+  host.append(card(L("A90") || "Trainingsadvies", adv, st));
+}
+
+/* ---------- historie: terugval + eerdere tests ---------- */
+const NIEUW_CELLEN = ["B8", "B9", "B10", "B11", "B13", "D8", "D9", "D10", "D11", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+const heeftNieuw = p => NIEUW_CELLEN.some(a => !isNul(p.t && p.t[a]));
+const testDatum = row => row.t["testdatum amf"] || row.t["testdatum fpm"] || row.t["archief datum"] || "onbekende datum";
+function uitHistorie(p, row) {
+  const g = k => row.t[k.toLowerCase()] || "";
+  const gn = k => num(row.n[k.toLowerCase()]);
+  const L = a => (data.labels && data.labels[a]) || "";
+  const t = { B4: (p.t && p.t.B4) || "", E3: g("Leeftijd"), E4: g("Gewicht (kg)"),
+    B8: g("Bench 1RM"), C8: g("Bench rel"), D8: g("Bench score"), B9: g("DL 1RM"), C9: g("DL rel"), D9: g("DL score"),
+    B10: g("Pull-up reps"), D10: g("PU score"), B11: g("1000m-eq"), D12: g("AMF Totaal"), B13: g("5km sec"), D13: g("5km score"),
+    B16: g("Zwem (m)"), B17: g("FPM Pull-up"), B18: g("Sit-up"), B19: g("Push-up"), B20: g("Speedmars km"), B21: g("Combat sec"), D23: g("FPM EIND"),
+    B50: g("1000m-eq"), B91: g("Speedmars km"), E91: g("Rang"), H91: g("Niveau FPM") };
+  const n = {};
+  let lengte = parseFloat(String(t.B4).replace(",", ".")); const gewicht = gn("Gewicht (kg)");
+  if (lengte > 3) lengte = lengte / 100;
+  if (isFinite(lengte) && lengte > 0 && gewicht !== null) t.G4 = nl(xround(gewicht / (lengte * lengte), 1), 1, true);
+  const bench = gn("Bench 1RM"), dl = gn("DL 1RM");
+  for (let r = 27; r <= 33; r++) {
+    const base = /bench/i.test(L("B" + r)) ? bench : dl;
+    const ratio = ratioVan(L("C" + r));
+    if (base === null || !isFinite(ratio)) continue;
+    const val = ratio === 1 ? base : xround(base * ratio, 1);
+    n["D" + r] = val; t["D" + r] = nl(xround(val, 1), 1);
+  }
+  const k1 = gn("1000m-eq"), k5 = gn("5km sec");
+  if (k1 !== null) n.B50 = k1;
+  if (k5 !== null && k5 > 0) n.B72 = k5 * Math.pow(1000 / 5000, 1.06);
+  return { v: p.v, t, n };
+}
+function mengPersoon(p, row) {
+  const h = uitHistorie(p, row);
+  const dAmf = row.t["testdatum amf"] || testDatum(row), dFpm = row.t["testdatum fpm"] || testDatum(row);
+  const has = (o, a) => !isNul(o && o[a]);
+  const q = { v: p.v, t: Object.assign({}, p.t), n: Object.assign({}, p.n), oud: {} }, namen = [];
+  const fpmC = ["B16", "B17", "B18", "B19", "B20", "B21", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+  const G = [
+    ["Bench", has(p.t, "B8"), has(h.t, "B8"), ["B8", "C8", "D8", "D27", "D28", "D29"], ["D27", "D28", "D29"], dAmf],
+    ["Deadlift", has(p.t, "B9"), has(h.t, "B9"), ["B9", "C9", "D9", "D30", "D31", "D32", "D33"], ["D30", "D31", "D32", "D33"], dAmf],
+    ["Pull-ups", has(p.t, "B10") || has(p.t, "D10"), has(h.t, "B10"), ["B10", "D10"], [], dAmf],
+    ["1000 m", has(p.t, "B11"), has(h.t, "B11"), ["B11", "D11", "B50"], ["B50"], dAmf],
+    ["5 km", has(p.t, "B13") || num(p.n && p.n.B72) !== null, has(h.t, "B13"), ["B13", "D13"], ["B72"], dAmf],
+    ["FPM", fpmC.some(a => has(p.t, a)), fpmC.some(a => has(h.t, a)), ["B16", "B17", "B18", "B19", "B20", "B21", "C16", "C17", "C18", "C19", "C20", "C21", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23", "B91", "E91", "H91", "B92", "E92", "B94", "B95", "B96"], [], dFpm],
+    ["", has(p.t, "E4"), has(h.t, "E4"), ["E4", "G4"], [], dAmf],
+    ["", has(p.t, "E3"), has(h.t, "E3"), ["E3"], [], dAmf]
+  ];
+  for (const [naam, nieuw, inHist, tc, nc, d] of G) {
+    if (nieuw || !inHist) continue;
+    tc.forEach(a => { if (h.t[a] !== undefined && h.t[a] !== "") { q.t[a] = h.t[a]; q.oud[a] = d; } else delete q.t[a]; });
+    nc.forEach(a => { if (h.n[a] !== undefined) { q.n[a] = h.n[a]; q.oud[a] = d; } else delete q.n[a]; });
+    if (naam) namen.push(naam + " (" + d + ")");
+  }
+  if (["B8", "B9", "B10", "B11"].some(a => isNul(p.t[a]))) delete q.t.D12;
+  return { q, namen };
+}
+function toonPersoon(p) {
+  const rows = (hist && hist.get(String(p.v).trim())) || [];
+  const terugval = !heeftNieuw(p) && rows.length > 0;
+  const meng = !terugval && rows.length > 0 ? mengPersoon(p, rows[rows.length - 1]) : null;
+  let toon = terugval ? uitHistorie(p, rows[rows.length - 1]) : (meng ? meng.q : p);
+  if (!terugval && ["B8", "B9", "B10", "B11"].some(a => isNul(toon.t && toon.t[a]))) { toon = Object.assign({}, toon, { t: Object.assign({}, toon.t) }); delete toon.t.D12; }
+  renderPerson(toon);
+  const host = $("#person");
+  if (meng && meng.namen.length) host.prepend(el("div", { class: "banner" }, el("b", { text: "Deels aangevuld uit de historie" }),
+    "Uit een eerdere test: " + meng.namen.join(", ") + ". Deze onderdelen zijn geel gemarkeerd. De rest is nieuw. Het AMF-totaal blijft leeg tot alle onderdelen opnieuw getest zijn."));
+  if (terugval) {
+    const dat = testDatum(rows[rows.length - 1]);
+    host.querySelectorAll(".card").forEach(c => { c.classList.add("oud"); const h = c.querySelector("h2"); if (h) h.textContent += " · test " + dat; });
+    host.prepend(el("div", { class: "banner" }, el("b", { text: "Geen nieuwe test ingevoerd" }),
+      "Dit is de laatste uitslag uit de historie: test van " + testDatum(rows[rows.length - 1]) + ". FPM-scores per onderdeel, normen en trainingsadvies staan niet in de historie."));
+  }
+  if (rows.length) {
+    const lijst = el("div");
+    rows.slice().reverse().forEach((row, i) => {
+      const sum = el("summary", null, el("span", { class: "dt", text: testDatum(row) + (terugval && i === 0 ? " (hierboven)" : "") }));
+      if (row.t["amf totaal"]) sum.append(badge(row.t["amf totaal"]));
+      if (row.t["fpm eind"]) sum.append(badge(row.t["fpm eind"]));
+      const out = el("div", { class: "out" });
+      row.lijst.forEach(([k, v]) => out.append(el("span", { text: k }), el("b", { text: v })));
+      lijst.append(el("details", { class: "hist" }, sum, out));
+    });
+    host.append(card("Eerdere tests (" + rows.length + ")", lijst));
+  }
+}
+
+/* ---------- zoeken ---------- */
+function doSearch(v) {
+  const key = String(v).trim();
+  msg($("#msgSearch"), "");
+  const p = key ? index.get(key) : null;
+  if (p) { toonPersoon(p); return; }
+  $("#person").textContent = "";
+  if (key.length >= 6) msg($("#msgSearch"), "Geen persoon met V-nummer " + key + ".");
+}
+$("#q").addEventListener("input", e => doSearch(e.target.value));
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
+
+/* ---------- hoofdscherm + tabs ---------- */
+let tab = "persoon";
+function openMain(mislukt) {
+  const both = !!(data && rooster);
+  $("#tabs").hidden = !both;
+  if (!data) tab = "rooster";
+  if (!rooster) tab = "persoon";
+  const info = [];
+  if (data) info.push("MPT van " + (data.gemaakt || "?") + " · " + fmtN(index.size, "persoon", "personen"));
+  const ge = open.get(huidig);
+  if (rooster) info.push("Rooster van " + (rooster.gemaakt || "?"));
+  if (mislukt && mislukt.length) info.push((mislukt.includes("rooster") ? "Rooster" : "MPT") + " niet ontgrendeld: ander wachtwoord");
+  $("#dataInfo").textContent = info.join(" · ");
+  $("#title").textContent = codeLabel(huidig) + (ge && ge.naam ? " · " + ge.naam : "");
+  setTab(tab);
+  show("scrMain");
+  if (tab === "persoon") setTimeout(() => $("#q").focus(), 50);
+}
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  $("#viewPersoon").hidden = t !== "persoon";
+  $("#viewRooster").hidden = t !== "rooster";
+  const ge = open.get(huidig);
+  $("#title").textContent = codeLabel(huidig) + (ge && ge.naam ? " · " + ge.naam : "");
+  if (t === "rooster") renderRooster();
+}
+document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+/* ---------- rooster: xlsx inlezen (zonder bibliotheek) ---------- */
+async function readZip(file) {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  let e = buf.length - 22;
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error("Dit is geen geldig .xlsx-bestand.");
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  const files = {};
+  for (let i = 0; i < n; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    files[dec.decode(buf.subarray(p + 46, p + 46 + nl))] = { method, csize, lho };
+    p += 46 + nl + xl + cl;
+  }
+  return async name => {
+    const f = files[name]; if (!f) return null;
+    const start = f.lho + 30 + dv.getUint16(f.lho + 26, true) + dv.getUint16(f.lho + 28, true);
+    const raw = buf.subarray(start, start + f.csize);
+    if (f.method === 0) return dec.decode(raw);
+    if (typeof DecompressionStream === "undefined") throw new Error("Deze browser kan .xlsx niet lezen. Gebruik een recente Chrome, Edge of Safari.");
+    const out = await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer();
+    return dec.decode(out);
+  };
+}
+async function readXlsx(file) {
+  const get = await readZip(file);
+  const X = t => new DOMParser().parseFromString(t, "application/xml");
+  const wb = X(await get("xl/workbook.xml"));
+  const rels = X(await get("xl/_rels/workbook.xml.rels"));
+  const target = {};
+  for (const r of rels.getElementsByTagName("Relationship")) target[r.getAttribute("Id")] = r.getAttribute("Target");
+  const ssTxt = await get("xl/sharedStrings.xml");
+  const ss = ssTxt ? [...X(ssTxt).getElementsByTagName("si")].map(si => [...si.getElementsByTagName("t")].filter(t => !t.closest || !t.closest("rPh")).map(t => t.textContent).join("")) : [];
+  const sheets = [];
+  for (const sh of wb.getElementsByTagName("sheet")) {
+    let t = target[sh.getAttribute("r:id")] || "";
+    t = t.startsWith("/") ? t.slice(1) : "xl/" + t.replace(/^\.\//, "");
+    const x = await get(t); if (!x) continue;
+    const cells = {};
+    for (const c of X(x).getElementsByTagName("c")) {
+      const ty = c.getAttribute("t"), v = c.getElementsByTagName("v")[0];
+      let val = null;
+      if (ty === "s" && v) val = ss[Number(v.textContent)];
+      else if (ty === "inlineStr") val = [...c.getElementsByTagName("t")].map(t => t.textContent).join("");
+      else if ((ty === "str" || ty === "e") && v) val = v.textContent;
+      else if (v) val = Number(v.textContent);
+      if (val !== null && val !== "") cells[c.getAttribute("r")] = val;
+    }
+    sheets.push({ naam: sh.getAttribute("name"), cells });
+  }
+  return sheets;
+}
+const colL = i => String.fromCharCode(64 + i);
+const lesNr = v => v === undefined || v === null || v === "" ? "" : (typeof v === "number" ? v.toFixed(2) : String(v).trim());
+async function parseRooster(file) {
+  const sheets = await readXlsx(file);
+  const les = sheets.find(s => s.naam === "Lessen");
+  if (!les) throw new Error("Tabblad 'Lessen' niet gevonden. Is dit het FTS-overzicht?");
+  const lessen = {};
+  for (let r = 2; r < 2000; r++) {
+    const nr = lesNr(les.cells["A" + r]); if (!nr) { if (r > 5 && !les.cells["A" + (r + 1)]) break; continue; }
+    const g = k => { const v = les.cells[k + r]; return v === undefined ? "" : String(v); };
+    lessen[nr] = { d: g("B"), les: g("C"), zone: g("D"), km: g("E"), opdr: g("F") };
+  }
+  const mesos = [];
+  for (const s of sheets) {
+    if (s.naam === "Lessen" || s.naam === "Instellingen") continue;
+    let pr = 0;
+    for (let r = 1; r < 400; r++) { const v = s.cells["A" + r]; if (typeof v === "string" && /^planning/i.test(v.trim())) { pr = r; break; } }
+    if (!pr) continue;
+    const dagen = [];
+    for (let c = 2; c <= 8; c++) { const v = s.cells[colL(c) + (pr + 1)]; if (v === undefined) break; dagen.push(String(v)); }
+    const weken = [];
+    for (let r = pr + 2; r < pr + 80; r++) {
+      const wk = s.cells["A" + r]; if (wk === undefined || wk === "") break;
+      weken.push({ wk: String(wk), dagen: dagen.map((_, i) => lesNr(s.cells[colL(i + 2) + r])) });
+    }
+    mesos.push({ naam: s.naam, titel: String(s.cells.A1 || s.naam), sub: String(s.cells.A2 || ""), dagen, weken });
+  }
+  if (!mesos.length) throw new Error("Geen meso-roosters met een blok 'Planning' gevonden.");
+  const d = new Date(), pad = n => String(n).padStart(2, "0");
+  return { formaat: "mpt-rooster", versie: 1, gemaakt: pad(d.getDate()) + "-" + pad(d.getMonth() + 1) + "-" + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()), bron: file.name, lessen, mesos };
+}
+
+/* ---------- rooster: weergave ---------- */
+const DISC = [["hardlopen", "#7FA7D0"], ["speedmars", "#9C8BC4"], ["marsen", "#8FB07A"], ["kracht", "#E0A07A"], ["mma", "#D98A94"],
+  ["zwemmen", "#6FB3BA"], ["oriëntatie", "#C9A96A"], ["orientatie", "#C9A96A"], ["combi", "#A99A80"], ["hiba", "#A99A80"],
+  ["klito", "#7EA6B3"], ["toba", "#7EA6B3"], ["touwbaan", "#7EA6B3"], ["ski", "#8E9BA8"]];
+const discKleur = d => { const l = String(d || "").toLowerCase(); for (const [k, c] of DISC) if (l.includes(k)) return c; return "var(--line)"; };
+function renderRooster() {
+  const host = $("#viewRooster"); host.textContent = "";
+  if (!rooster) return;
+  const ms = Array.isArray(rooster.mesos) ? rooster.mesos.filter(x => x && Array.isArray(x.weken) && x.weken.length) : [];
+  if (!ms.length) { host.append(card("Rooster", el("p", { class: "empty", text: "Dit rooster bevat geen weken." }))); return; }
+  if (rState.meso >= ms.length) rState.meso = 0;
+  const m = ms[rState.meso];
+  if (rState.wk >= m.weken.length) rState.wk = 0;
+
+  const sel = el("select", { class: "fill", "aria-label": "Meso" });
+  ms.forEach((x, i) => sel.append(el("option", { value: String(i), text: x.naam })));
+  sel.value = String(rState.meso);
+  sel.addEventListener("change", () => { rState.meso = Number(sel.value); rState.wk = 0; renderRooster(); });
+  const chips = el("div", { class: "chips", role: "group", "aria-label": "Week" });
+  m.weken.forEach((w, i) => {
+    const b = el("button", { type: "button", text: "Wk " + w.wk, "aria-pressed": String(i === rState.wk) });
+    b.addEventListener("click", () => { rState.wk = i; renderRooster(); });
+    chips.append(b);
+  });
+  const een = ms.length === 1;
+  host.append(el("div", { class: "card" }, een ? null : el("label", { class: "f", text: "Meso", style: "margin-top:0" }), een ? null : sel,
+    m.sub ? el("p", { class: "note", text: m.sub, style: een ? "margin-top:0" : null }) : null, chips));
+
+  const w = m.weken[rState.wk];
+  const list = el("div");
+  if (!w || !Array.isArray(w.dagen) || !w.dagen.some(Boolean)) {
+    list.append(el("p", { class: "empty", text: "Voor deze week zijn nog geen lessen ingepland." }));
+  } else {
+    (Array.isArray(m.dagen) ? m.dagen : ["Ma", "Di", "Wo", "Do", "Vr"]).forEach((dn, i) => {
+      const nr = (w.dagen || [])[i], L = nr ? (rooster.lessen || {})[nr] : null;
+      const blok = el("div", { class: "les" });
+      if (!nr) blok.append(el("span", { class: "meta", text: "—" }));
+      else if (!L) blok.append(el("div", { class: "nr", text: nr }), el("b", { text: "Les " + nr + " (niet in Lessen)" }));
+      else {
+        blok.style.borderLeftColor = discKleur(L.d);
+        const meta = [L.zone, [L.km, L.opdr].filter(Boolean).join(" · ")].filter(Boolean).join("  |  ");
+        blok.append(el("div", { class: "nr", text: nr + "  " + L.d }), el("b", { text: L.les || L.d }));
+        if (meta) blok.append(el("div", { class: "meta", text: meta }));
+      }
+      list.append(el("div", { class: "day" }, el("div", { class: "dn", text: dn }), blok));
+    });
+  }
+  host.append(card(m.titel + " · week " + (w ? w.wk : "-"), list));
+}
+
+/* ---------- start ---------- */
+async function route() {
+  if (location.hash === "#beheer") { show("scrAdmin"); return; }
+  if (huidig !== null && open.has(huidig)) { show("scrMain"); return; }
+  groepen = (await kvGet("groepen")) || [];
+  groepenScherm();
+}
+addEventListener("hashchange", route);
+if (!(window.crypto && crypto.subtle)) {
+  document.querySelector("main").innerHTML = '<div class="card"><p class="lead">Deze browser ondersteunt de beveiliging niet.</p><p class="muted">Open de app via https in een recente Safari, Chrome of Edge.</p></div>';
+} else {
+  route();
+}
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+  navigator.serviceWorker.ready.then(r => { if (navigator.onLine && r.active) r.active.postMessage("recache"); }).catch(() => {});
+}
+})();
+</script>
+</body>
+</html>
