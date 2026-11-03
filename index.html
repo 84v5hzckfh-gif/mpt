@@ -206,7 +206,7 @@ details.hist .out{margin:2px 0 10px}
   <div style="text-align:center"><button class="linkish" id="btnAdminBack">Terug</button></div>
 </section>
 
-<div style="text-align:center" id="adminLinkWrap"><button class="linkish" id="btnAdmin">Beheer (PC)</button></div>
+<div style="text-align:center" id="adminLinkWrap" hidden><button class="linkish" id="btnAdmin">Beheer (PC)</button></div>
 <input type="file" id="fileIn" hidden>
 </main>
 
@@ -291,7 +291,7 @@ async function decryptData(w, pw) {
 function show(id) {
   for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
   $("#btnLock").hidden = id !== "scrMain";
-  $("#adminLinkWrap").hidden = id === "scrAdmin" || id === "scrMain";
+  $("#adminLinkWrap").hidden = true;   // Beheer zit alleen nog in de instructie-app
   window.scrollTo(0, 0);
 }
 function msg(el, text, kind) {
@@ -907,7 +907,7 @@ function renderRooster() {
 
 /* ---------- start ---------- */
 async function route() {
-  if (location.hash === "#beheer") { show("scrAdmin"); return; }
+  if (location.hash === "#beheer") history.replaceState(null, "", location.pathname + location.search);
   if (data || rooster) { show("scrMain"); return; }
   blobs.mpt = (await kvGet(KEYS.mpt)) || null;
   blobs.rooster = (await kvGet(KEYS.rooster)) || null;
