@@ -460,12 +460,13 @@ function tekenLijst() {
       extra.append(del);
       let bezig = false;
       const go = async () => {
-        if (!inp.value || bezig) return;
+        const pw = inp.value;
+        if (!pw || bezig) return;
+        inp.value = "";   // meteen leegmaken: iPhone biedt dan niet aan het wachtwoord op te slaan
         bezig = true; inp.disabled = true; busy(ok, true, ""); msg(m, "");
         const meld = [];
         try {
-          const ging = await probeerGroep(g, inp.value, meld);
-          inp.value = "";
+          const ging = await probeerGroep(g, pw, meld);
           if (ging && open.has(g.code)) { naarGroep(g.code); if (meld.length) msg($("#dataInfoMsg"), meld.join(" "), "ok"); }
           else msg(m, meld.length ? meld.join(" ") : "Wachtwoord onjuist voor " + codeLabel(g.code) + ".");
           if (ging && !open.has(g.code)) { tekenLijst(); }
@@ -603,6 +604,7 @@ async function probeerAlle() {
   if (!pw || zoekBezig) return;
   zoekBezig = true;
   const btn = $("#btnUnlock"), inp = $("#pwUnlock");
+  inp.value = "";   // meteen leegmaken: iPhone biedt dan niet aan het wachtwoord op te slaan
   inp.disabled = true; busy(btn, true, ""); msg($("#msgLock"), "");
   // eerst groepen die nog (deels) dicht zijn of een klaargezette versie hebben
   const kandidaten = groepen.filter(g => !open.has(g.code) || open.get(g.code).half);
@@ -683,7 +685,9 @@ $("#btnEncrypt").addEventListener("click", async () => {
   try {
     const code = $("#gCode").value.trim().toUpperCase(), naam = $("#gNaam").value.trim().slice(0, 60);
     if (!geldigeCode(code)) throw new Error("Code mag alleen letters en cijfers bevatten (max. 10).");
-    const w = await encryptData(exportKind === "rooster" ? roosterSelectie() : exportPlain, $("#pwNew1").value, exportKind, code, naam);
+    const pw = $("#pwNew1").value;
+    $("#pwNew1").value = ""; $("#pwNew2").value = "";   // meteen leegmaken (geen opslaan-vraag van iPhone)
+    const w = await encryptData(exportKind === "rooster" ? roosterSelectie() : exportPlain, pw, exportKind, code, naam);
     const blob = new Blob([JSON.stringify(w)], { type: "application/octet-stream" });
     const a = document.createElement("a");
     const d = new Date(), pad = n => String(n).padStart(2, "0");
